@@ -1,0 +1,56 @@
+````markdown
+# Imager.TiffLib
+
+## Description
+
+Repository for image storage library implemented by **Imager**.  
+Allows the user to read and write TIFF files, together with the expected metadata as outlined in the **Imager protocol**.
+
+---
+
+## Installation
+
+### Windows
+
+1. Ensure you have the required prerequisites installed:
+   - scoop: follow the instructions at the [link text](https://scoop.sh/)
+   - meson: after installing scoop, run 
+   ```
+   scoop install meson
+````
+
+2. Clone the repository:
+   ```
+   git clone --recurse-submodules  https://github.com/ImagerMicroscopy/Imager.TiffLib.git
+````
+
+3. Navigate to the repository folder:
+
+   ```
+   cd Imager.TiffLib
+   ```
+
+4. Build the project with meson
+
+---
+
+### Linux
+
+1. WIP
+
+   ## Documentation
+
+The **Imager.TiffLib** library provides functionality to:
+
+* Read TIFF image files
+* Write TIFF image files
+* Store and retrieve TIFF metadata as defined by the **Imager protocol**
+
+
+
+## License
+
+This project is licensed under the terms specified in the `LICENSE` file.
+
+```
+```

@@ -1,0 +1,41 @@
+project('MeasurementImageStorage', ['cpp', 'c'],
+  version : '0.1',
+  default_options : ['warning_level=3', 'cpp_std=c++20', 'default_library=shared'])
+
+cc = meson.get_compiler('cpp')
+
+incDir = include_directories('include')
+igorincdir = include_directories('../XOPSupport/')
+
+lnbtiff_proj = subproject('lnbtiff')
+lnbtiff_dep = lnbtiff_proj.get_variable('liblnbtiff_dep')
+
+
+subdir('src')       # stores files to compile in 'MIMSources' variable
+subdir('resources') # stores files to compile in 'igorResource' variable
+
+libnames = ['version']
+libraries = []
+foreach ln : libnames
+    libraries += cc.find_library(ln)
+endforeach
+
+igorlibdir = join_paths(meson.project_source_root(), '../XOPSupport')
+igorSupportLibDir = join_paths(meson.project_source_root(), '../XOPSupport/VC')
+igorlibs = [cc.find_library('Igor64', dirs:[igorlibdir]), cc.find_library('XOPSupport64', dirs:[igorSupportLibDir])]
+
+library('MeasurementImageStorage-64',
+        MIMSources, 'src/MeasurementImagesMain.cpp', 'src/IgorUtils.cpp', igorResource,
+        include_directories: [incDir, igorincdir],
+        dependencies : [libraries, igorlibs, lnbtiff_dep],
+        name_suffix : 'xop',
+        cpp_args : ['-DNOMINMAX'],
+        install : true)
+
+library('MeasurementImageStorageDLL',
+        MIMSources, 'src/MeasurementImageStorageDLL.cpp',
+        include_directories: [incDir],
+        dependencies : [libraries, lnbtiff_dep],
+        name_suffix : 'dll',
+        cpp_args : ['-DNOMINMAX'],
+        install : true)

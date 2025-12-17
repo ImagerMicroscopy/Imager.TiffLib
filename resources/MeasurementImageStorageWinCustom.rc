@@ -1,0 +1,218 @@
+/*	XOP-specific resources for XOP1 on Windows
+
+	This file is compiled by the resource compiler and creates XOP-specific
+	resources that IGOR looks for in an XOP module.
+*/
+
+#include "XOPResources.h"			// Defines XOP-specific symbols.
+
+/* no custom error messages */
+
+/* no menu item */
+
+1100 XOPI							// XOPI - Describes general XOP properties to IGOR. 
+BEGIN
+	XOP_VERSION,					// Version number of host XOP system.
+	DEV_SYS_CODE,					// Code for development system used to make XOP.
+	0,								// Obsolete - set to zero.
+	0,								// Obsolete - set to zero.
+	XOP_TOOLKIT_VERSION				// XOP Toolkit version.
+END
+
+1100 XOPC							// Describes operations that the XOP adds to IGOR.
+BEGIN
+	"IMSNewStorage\0",
+	XOPOp | utilOp | compilableOp,
+
+	"\0"							// NOTE: NULL required to terminate the resource.
+END
+
+1100 XOPF							// Describes functions added by XOP to IGOR.
+BEGIN
+    "IMSOpenFile\0",				// Function name.
+    F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+    NT_FP64,						// Return value type.
+    HSTRING_TYPE,					// First parameter type.
+    0,							// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSAddNewImage\0",			// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,	    // Function category,
+	NT_FP64,				    // Return value type.
+    NT_FP64,					// storer ID
+    WAVE_TYPE,                  // image
+    HSTRING_TYPE,               // acq type
+	HSTRING_TYPE,				// detector name
+    NT_FP64,                    // timepoint
+    WAVE_TYPE,                  // stage position
+    NT_FP64,                    // detection index
+    HSTRING_TYPE,               // stage position name
+	0,							// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSAddSmartProgramDecision\0",			// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,	    // Function category,
+	NT_FP64,				    // Return value type.
+    NT_FP64,					// storer ID
+    HSTRING_TYPE,               // JSON-encoded smart program decision
+	0,							// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSNoMoreImagesComing\0",	// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,	    // Function category,
+	NT_FP64,				    // Return value type.
+	NT_FP64,					// First parameter type.
+	0,							// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSGetImage\0",	// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,		// Function category,
+	WAVE_TYPE,			        // Return value type.
+    NT_FP64,					// IMS ID
+    HSTRING_TYPE,               // acq type
+	HSTRING_TYPE,				// detector name
+    NT_FP64,                    // index within acq type
+	0,							// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSGetTimepoint\0",	// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,		// Function category,
+	NT_FP64,			        // Return value type.
+	NT_FP64,					// IMS ID
+	HSTRING_TYPE,               // acq type
+	HSTRING_TYPE,				// detector name
+	NT_FP64,                    // index within acq type
+	0,							// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSGetStagePosition\0",	// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,		// Function category,
+	WAVE_TYPE,			        // Return value type.
+	NT_FP64,					// IMS ID
+	HSTRING_TYPE,               // acq type
+	HSTRING_TYPE,				// detector name
+	NT_FP64,                    // index within acq type
+	0,							// NOTE: 0 required to terminate list of parameter types.
+
+    "IMSGetNumberOfDetections\0",	// Function name.
+    F_UTIL | F_THREADSAFE | F_EXTERNAL,		// Function category,
+    NT_FP64,			        // Return value type.
+    NT_FP64,					// IMS ID
+    0,							// NOTE: 0 required to terminate list of parameter types.
+
+    "IMSGetDetectionIndex\0",	// Function name.
+    F_UTIL | F_THREADSAFE | F_EXTERNAL,		// Function category,
+    NT_FP64,			        // Return value type.
+    NT_FP64,					// IMS ID
+    HSTRING_TYPE,               // acq type
+    HSTRING_TYPE,				// detector name
+    NT_FP64,                    // index within acq type
+    0,							// NOTE: 0 required to terminate list of parameter types.
+
+    "IMSGetStagePositionNames\0",	// Function name.
+    F_UTIL | F_THREADSAFE | F_EXTERNAL,		// Function category,
+    WAVE_TYPE,			        // Return value type.
+    NT_FP64,					// IMS ID
+    0,							// NOTE: 0 required to terminate list of parameter types.
+
+    "IMSGetStagePositionName\0",	// Function name.
+    F_UTIL | F_THREADSAFE | F_EXTERNAL,		// Function category,
+    HSTRING_TYPE,			    // Return value type.
+    NT_FP64,					// IMS ID
+    HSTRING_TYPE,               // acq type
+    HSTRING_TYPE,				// detector name
+    NT_FP64,                    // index within acq type
+    0,							// NOTE: 0 required to terminate list of parameter types.
+
+    "IMSGetStorageLocation\0",	// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+    HSTRING_TYPE,						// Return value type.
+    NT_FP64,					// First parameter type.
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+    "IMSGetImagerProgram\0",	// Function name.
+    F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+    HSTRING_TYPE,						// Return value type.
+    NT_FP64,					// First parameter type.
+    0,								// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSGetAcquisitionTypeNames\0",	// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+	WAVE_TYPE,						// Return value type.
+	NT_FP64,						// First parameter type.
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSGetDetectorNames\0",	// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+	WAVE_TYPE,						// Return value type.
+	NT_FP64,						// First parameter type.
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSGetNumberOfStoredImages\0",	// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+	NT_FP64,						// Return value type.
+	NT_FP64,						// First parameter type.
+	HSTRING_TYPE,					// acq type
+	HSTRING_TYPE,					// detector name
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSGetSmartProgramDecisions\0",    // Function name.
+    F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+    WAVE_TYPE,						// Return value type.
+    NT_FP64,						// First parameter type.
+    0,								// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSClose\0",		// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+	NT_FP64,						// Return value type.
+	NT_FP64,					    // First parameter type.
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSNewBasicStorage\0",		// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+	NT_FP64,						// storage ID
+	HSTRING_TYPE,					// file path
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSAddNewBasicImage\0",			// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,	    // Function category,
+	NT_FP64,				    // Return value type.
+	NT_FP64,					// storer ID
+	WAVE_TYPE,                  // image
+	0,							// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSCloseBasicStorage\0",		// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+	NT_FP64,						// Return value type.
+	NT_FP64,						// storer ID
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSNewBasicLoader\0",		// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+	NT_FP64,						// return value: storage ID
+	HSTRING_TYPE,					// file path
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSGetNumberOfStoredImagesBasic\0",		// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+	NT_FP64,						// return value: number of images
+	NT_FP64,						// storer ID
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSGetBasicImage\0",			// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+	WAVE_TYPE,						// return value: image
+	NT_FP64,						// first parameter: storer ID
+	NT_FP64,						// second parameter: index of image to read
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+	"IMSCloseBasicLoader\0",		// Function name.
+	F_UTIL | F_THREADSAFE | F_EXTERNAL,			// Function category,
+	NT_FP64,						// Return value type.
+	NT_FP64,						// storer ID
+	0,								// NOTE: 0 required to terminate list of parameter types.
+
+	0,								// NOTE: 0 required to terminate the resource.
+END
+
+
+1100 STR#
+BEGIN
+	"\0"	
+END
+
+
