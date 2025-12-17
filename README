@@ -1,4 +1,3 @@
-````markdown
 # Imager.TiffLib
 
 ## Description
@@ -22,7 +21,7 @@ Allows the user to read and write TIFF files, together with the expected metadat
 2. Clone the repository:
    ```
    git clone --recurse-submodules  https://github.com/ImagerMicroscopy/Imager.TiffLib.git
-````
+   ```
 
 3. Navigate to the repository folder:
 
