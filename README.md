@@ -16,7 +16,7 @@ Allows the user to read and write TIFF files, together with the expected metadat
    - meson: after installing scoop, run 
    ```
    scoop install meson
-````
+   ```
 
 2. Clone the repository:
    ```
