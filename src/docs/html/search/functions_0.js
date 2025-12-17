@@ -1,0 +1,24 @@
+var searchData=
+[
+  ['misaddnewimage_0',['MISAddNewImage',['../_measurement_image_storage_d_l_l_8h.html#a54454aa9f0a7f4017741d6a7d7974592',1,'MeasurementImageStorageDLL.h']]],
+  ['misaddsmartprogramdecision_1',['MISAddSmartProgramDecision',['../_measurement_image_storage_d_l_l_8h.html#abcf5c575414d3056043270d75d742906',1,'MeasurementImageStorageDLL.h']]],
+  ['misclose_2',['MISClose',['../_measurement_image_storage_d_l_l_8h.html#a6671cf23519a2dc19cc378a8ba9d036d',1,'MeasurementImageStorageDLL.h']]],
+  ['misfreeprogramdescription_3',['MISFreeProgramDescription',['../_measurement_image_storage_d_l_l_8h.html#a1bbd9468c2cac521b13720810c0b6fbe',1,'MeasurementImageStorageDLL.h']]],
+  ['misfreestagepositionname_4',['MISFreeStagePositionName',['../_measurement_image_storage_d_l_l_8h.html#a3c39e2d4721ecfffb0483c9582401542',1,'MeasurementImageStorageDLL.h']]],
+  ['misfreestringarray_5',['MISFreeStringArray',['../_measurement_image_storage_d_l_l_8h.html#a1be0a0340d722ef13cfa9fb7345f3972',1,'MeasurementImageStorageDLL.h']]],
+  ['misgetacquisitionnames_6',['MISGetAcquisitionNames',['../_measurement_image_storage_d_l_l_8h.html#abc6324bc47a8796ea7fbf0b15a271fd7',1,'MeasurementImageStorageDLL.h']]],
+  ['misgetdetectionindex_7',['MISGetDetectionIndex',['../_measurement_image_storage_d_l_l_8h.html#a0d6acab24fd95a444c1fa6086d115bfc',1,'MeasurementImageStorageDLL.h']]],
+  ['misgetdetectornames_8',['MISGetDetectorNames',['../_measurement_image_storage_d_l_l_8h.html#ab81e83a5559079459f56636420db0f1e',1,'MeasurementImageStorageDLL.h']]],
+  ['misgetimage_9',['MISGetImage',['../_measurement_image_storage_d_l_l_8h.html#ae852acb3fcb785e1287ce31d6582d306',1,'MeasurementImageStorageDLL.h']]],
+  ['misgetimageindexatdetectionindex_10',['MISGetImageIndexAtDetectionIndex',['../_measurement_image_storage_d_l_l_8h.html#adcfca5fc4f025bd94c914429b69c03f5',1,'MeasurementImageStorageDLL.h']]],
+  ['misgetimagerprogram_11',['MISGetImagerProgram',['../_measurement_image_storage_d_l_l_8h.html#ad5255329623afc3b485cd08a5d9bd2d3',1,'MeasurementImageStorageDLL.h']]],
+  ['misgetnumberofdetections_12',['MISGetNumberOfDetections',['../_measurement_image_storage_d_l_l_8h.html#a76e16d35a1f1b4a51a2948db028f7c52',1,'MeasurementImageStorageDLL.h']]],
+  ['misgetnumberofimages_13',['MISGetNumberOfImages',['../_measurement_image_storage_d_l_l_8h.html#a30a5f99ef7a5cacd971a719b8ac01079',1,'MeasurementImageStorageDLL.h']]],
+  ['misgetsmartprogramdecisions_14',['MISGetSmartProgramDecisions',['../_measurement_image_storage_d_l_l_8h.html#a0c170051474aaebfcee3cc8a5e348582',1,'MeasurementImageStorageDLL.h']]],
+  ['misgetstageposition_15',['MISGetStagePosition',['../_measurement_image_storage_d_l_l_8h.html#a9d14ef79cafec81b00b4a1efc7855947',1,'MeasurementImageStorageDLL.h']]],
+  ['misgetstagepositionname_16',['MISGetStagePositionName',['../_measurement_image_storage_d_l_l_8h.html#a0d0052c38de7295ca92e1b8800aeb615',1,'MeasurementImageStorageDLL.h']]],
+  ['misgettimepoint_17',['MISGetTimePoint',['../_measurement_image_storage_d_l_l_8h.html#a2a53ee031b34b334660102d153ff62ff',1,'MeasurementImageStorageDLL.h']]],
+  ['misnewstorage_18',['MISNewStorage',['../_measurement_image_storage_d_l_l_8h.html#a324e6e8840a7526d38a58753854e37ce',1,'MeasurementImageStorageDLL.h']]],
+  ['misopenfile_19',['MISOpenFile',['../_measurement_image_storage_d_l_l_8h.html#a5d27d3ca0b2ce3c9fc5a1f50080ecbb1',1,'MeasurementImageStorageDLL.h']]],
+  ['misreleaseimagedata_20',['MISReleaseImageData',['../_measurement_image_storage_d_l_l_8h.html#a12b4dd51bcc7c4b08d7c2ff53efb5ed1',1,'MeasurementImageStorageDLL.h']]]
+];

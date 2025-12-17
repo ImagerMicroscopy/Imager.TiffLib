@@ -1,0 +1,31 @@
+# Doxyfile for MeasurementImageStorageDLL.h
+
+# Project information
+PROJECT_NAME           = "MeasurementImageStorage API"
+PROJECT_BRIEF          = "API documentation for the Measurement Image Storage DLL"
+OUTPUT_DIRECTORY       = docs
+INPUT                  = MeasurementImageStorageDLL.h
+RECURSIVE              = NO
+
+# Extract all functions, even without additional documentation
+EXTRACT_ALL            = YES
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+EXTRACT_LOCAL_METHODS  = YES
+
+# Optimize for C API
+OPTIMIZE_OUTPUT_FOR_C  = YES
+
+# HTML output only
+GENERATE_HTML          = YES
+HTML_OUTPUT            = html
+GENERATE_LATEX         = NO
+GENERATE_RTF           = NO
+GENERATE_MAN           = NO
+GENERATE_XML           = NO
+
+# Put everything in a single page
+GENERATE_TREEVIEW      = NO
+INLINE_SOURCES         = YES
+SOURCE_BROWSER         = NO
