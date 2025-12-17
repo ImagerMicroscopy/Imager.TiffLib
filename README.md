@@ -30,14 +30,17 @@ Allows the user to read and write TIFF files, together with the expected metadat
    ```
 
 4. Build the project with meson
-
+   ```
+   meson setup builddir
+   meson compile -C builddir
+   ```
 ---
-
+Once the project is build, you can find the **MeasurementImageStorage.dll** in the builddir folder. 
 ### Linux
 
 1. WIP
 
-   ## Documentation
+## Documentation
 
 The **Imager.TiffLib** library provides functionality to:
 
