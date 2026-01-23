@@ -38,8 +38,16 @@ AcquiredImage FileLoaderClass::getImage(const AcqTypeAndDetName& acqTypeAndDetNa
 }
 
 int FileLoaderClass::getNumberOfStoredImages(const AcqTypeAndDetName& acqTypeAndDetName) const {
-	if (_imageIndicesForChannel.count(acqTypeAndDetName) > 0) {
-		return _imageIndicesForChannel.at(acqTypeAndDetName).size();
+    if (_imageIndicesForChannel.count(acqTypeAndDetName) > 0) {
+        int numimages = 0;
+            for (const auto& [key, value] : _imageIndicesForChannel) {
+                if (key.first==acqTypeAndDetName.first)
+                {
+                    numimages += value.size();
+                }
+            }
+
+        return numimages;
 	} else {
 		return 0;
 	}
@@ -94,7 +102,7 @@ AcquiredImage FileLoaderClass::_derivedReadImage(const AcqTypeAndDetName& acqTyp
 
 	double timePoint = _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex);
 	StagePosition stagePosition = _imagesStagePositions.at(acqTypeAndDetName).at(imageIndex);
-	int64_t detectionIndex = _imagesDetectionIndices.at(acqTypeAndDetName.first).at(imageIndex);
+    int64_t detectionIndex = imageIndex;
 	std::string stagePositionName = _imagesStagePositionNamesAtDetectionIndices.at(detectionIndex);
 
 	std::pair<int, int> imageSize(imageWidth, imageLength);

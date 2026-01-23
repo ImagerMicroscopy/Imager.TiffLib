@@ -277,7 +277,7 @@ std::string FileStorageClass::_generateOMEXML() const {
 	for (size_t i = 0; i < _imagesAcqTypesAndDetNames.size(); i++) {
 		AcqTypeAndDetName acqTypeAndDetName = _imagesAcqTypesAndDetNames[i];
 		int indexWithinAcqAndDet = tempNextIndices.at(acqTypeAndDetName);
-		int64_t detectionIndex = _imagesDetectionIndices.at(acqTypeAndDetName.first).at(indexWithinAcqAndDet);
+		int64_t detectionIndex = _imagesDetectionIndices.at(acqTypeAndDetName.first).at(i);
 		
 		// Create MapAnnotation for this image
 		tinyxml2::XMLElement* imageAnnotationElem = xmlDoc.NewElement("MapAnnotation");
@@ -348,7 +348,7 @@ std::string FileStorageClass::_generateOMEXML() const {
         planeElem->SetAttribute("DeltaTUnit", "s");
         double x, y, z;
         std::tie(x, y, z) = _imagesStagePositions.at(acqTypeAndDetName).at(indexWithinAcqAndDet);
-    	int64_t detectionIndex = _imagesDetectionIndices.at(acqTypeAndDetName.first).at(indexWithinAcqAndDet);
+    	int64_t detectionIndex = _imagesDetectionIndices.at(acqTypeAndDetName.first).at(i);
         planeElem->SetAttribute("PositionX", x);
         planeElem->SetAttribute("PositionY", y);
         planeElem->SetAttribute("PositionZ", z);
