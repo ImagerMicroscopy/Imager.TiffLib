@@ -105,6 +105,19 @@ double FileStorageClass::getTimePoint(const AcqTypeAndDetName& acqTypeAndDetName
 	return _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex);
 }
 
+std::int64_t FileStorageClass::getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const {
+	return _imageIdxDetIdxMapForChannel.at(acqTypeAndDetName).at(detectionIndex);
+}
+
+std::int64_t  FileStorageClass::getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const {
+	return _detIdxImageIdxMapForChannel.at(acqTypeAndDetName).at(imageIndex);
+}
+
+const std::vector<int>& FileStorageClass::getDetectionIndecesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const {
+
+	return _detectionIndicesForChannel.at(acqTypeAndDetName);
+}
+
 std::int64_t FileStorageClass::getNumberOfDetections() const {
 	return _imagesStagePositionNames.size();
 }
@@ -273,11 +286,17 @@ std::string FileStorageClass::_generateOMEXML() const {
 	for (const auto& id : _imageDimensions) {
 		tempNextIndices[id.first] = 0;
 	}
+	std::map<AcquisitionName, int64_t> next_ind;
+	for (const auto [key, value] : _imagesDetectionIndices)
+	{
+		next_ind[key] = 0;
+	}
 	
 	for (size_t i = 0; i < _imagesAcqTypesAndDetNames.size(); i++) {
 		AcqTypeAndDetName acqTypeAndDetName = _imagesAcqTypesAndDetNames[i];
 		int indexWithinAcqAndDet = tempNextIndices.at(acqTypeAndDetName);
-		int64_t detectionIndex = _imagesDetectionIndices.at(acqTypeAndDetName.first).at(i);
+		int64_t detectionIndex = _imagesDetectionIndices.at(acqTypeAndDetName.first).at(next_ind[acqTypeAndDetName.first]);
+		next_ind[acqTypeAndDetName.first]++;
 		
 		// Create MapAnnotation for this image
 		tinyxml2::XMLElement* imageAnnotationElem = xmlDoc.NewElement("MapAnnotation");
@@ -348,7 +367,7 @@ std::string FileStorageClass::_generateOMEXML() const {
         planeElem->SetAttribute("DeltaTUnit", "s");
         double x, y, z;
         std::tie(x, y, z) = _imagesStagePositions.at(acqTypeAndDetName).at(indexWithinAcqAndDet);
-    	int64_t detectionIndex = _imagesDetectionIndices.at(acqTypeAndDetName.first).at(i);
+//    	int64_t detectionIndex = _imagesDetectionIndices.at(acqTypeAndDetName.first).at(i);
         planeElem->SetAttribute("PositionX", x);
         planeElem->SetAttribute("PositionY", y);
         planeElem->SetAttribute("PositionZ", z);

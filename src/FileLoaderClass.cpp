@@ -68,6 +68,19 @@ std::int64_t FileLoaderClass::getDetectionIndex(const AcqTypeAndDetName &acqType
 	return _imagesDetectionIndices.at(acqTypeAndDetName.first).at(imageIndex);
 }
 
+std::int64_t FileLoaderClass::getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const {
+    return _imageIdxDetIdxMapForChannel.at(acqTypeAndDetName).at(detectionIndex);
+}
+std::int64_t FileLoaderClass::getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const {
+    return _detIdxImageIdxMapForChannel.at(acqTypeAndDetName).at(imageIndex);
+}
+
+
+
+const std::vector<int>& FileLoaderClass::getDetectionIndecesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const {
+    return _detectionIndicesForChannel.at(acqTypeAndDetName);
+}
+
 const std::vector<std::string> & FileLoaderClass::getStagePositionNames() const {
 	return _imagesStagePositionNamesAtDetectionIndices;
 }
@@ -82,11 +95,12 @@ const std::vector<std::string> & FileLoaderClass::getSmartProgramDecisions() con
 }
 
 AcquiredImage FileLoaderClass::_derivedReadImage(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) {
-	int linearIdx = _imageIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
-
+//	int linearIdx = _imageIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
+//    int linearIdx = imageIndex;
 	std::uint64_t imageLength, imageWidth, nBytesInImage;
+    int64_t detectionIndex = getDetectionIdxForImageIdxForChannel(acqTypeAndDetName, imageIndex);
 	TagType pixelType;
-	_tiffFile.getImageDimensions(linearIdx, imageLength, imageWidth, pixelType, nBytesInImage);
+	_tiffFile.getImageDimensions(imageIndex, imageLength, imageWidth, pixelType, nBytesInImage);
 	if ((pixelType != TIFF_SHORT) && (pixelType != TIFF_DOUBLE)) {
 		throw std::runtime_error("Not a 16-bit or double image");
 	}
@@ -100,15 +114,14 @@ AcquiredImage FileLoaderClass::_derivedReadImage(const AcqTypeAndDetName& acqTyp
 		throw std::runtime_error("unknown pixel type when reading from disk");
 	}
 
-	double timePoint = _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex);
-	StagePosition stagePosition = _imagesStagePositions.at(acqTypeAndDetName).at(imageIndex);
-    int64_t detectionIndex = imageIndex;
+	double timePoint = _imagesTimepoints.at(acqTypeAndDetName).at(detectionIndex);
+	StagePosition stagePosition = _imagesStagePositions.at(acqTypeAndDetName).at(detectionIndex);
 	std::string stagePositionName = _imagesStagePositionNamesAtDetectionIndices.at(detectionIndex);
 
 	std::pair<int, int> imageSize(imageWidth, imageLength);
 	std::vector<std::uint16_t> imageData(nBytesInImage / sizeof(std::uint16_t));
 
-	_tiffFile.loadImageData(linearIdx, reinterpret_cast<std::uint8_t*>(imageData.data()), imageData.size() * sizeof(std::uint16_t));
+	_tiffFile.loadImageData(imageIndex, reinterpret_cast<std::uint8_t*>(imageData.data()), imageData.size() * sizeof(std::uint16_t));
 
 	AcquiredImage image(std::move(imageData), outputPixelType, imageSize, timePoint, stagePosition, detectionIndex, stagePositionName);
     return image;
@@ -248,6 +261,9 @@ void FileLoaderClass::_parseOMEXML() {
         _imagesStagePositions[acqTypeAndDetName].push_back(StagePosition(x, y, z));
         if (haveDetectionIdxAndStagePositionName) {
             _imagesDetectionIndices[acqName].push_back(detectionIndex);
+            _detectionIndicesForChannel[acqTypeAndDetName].push_back(detectionIndex);
+            _imageIdxDetIdxMapForChannel[acqTypeAndDetName][detectionIndex] = imageIdx;
+            _detIdxImageIdxMapForChannel[acqTypeAndDetName][imageIdx] = detectionIndex;
             if (detectionIndex>_maxdetectionIdx){ 
                 _maxdetectionIdx = detectionIndex;
             }

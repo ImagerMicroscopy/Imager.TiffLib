@@ -43,6 +43,9 @@ public:
 	std::int64_t getDetectionIndex(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
 	const std::vector<std::string>& getStagePositionNames() const override;
 	std::string getStagePositionName(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
+	const std::vector<int>& getDetectionIndecesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const override;
+	std::int64_t FileStorageClass::getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const override;
+	std::int64_t getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
 
 	void addNewImage(const AcqTypeAndDetName& acqTypeAndDetName, AcquiredImage& newImage);
 	void addNewSmartProgramDecision(const std::string& decision);
@@ -71,7 +74,9 @@ private:
 	std::map<AcqTypeAndDetName, std::vector<StagePosition>> _imagesStagePositions;
 	std::map<AcquisitionName, std::vector<std::int64_t>> _imagesDetectionIndices;
 	std::vector<std::string> _imagesStagePositionNames;
-
+	std::map<AcqTypeAndDetName, std::vector<int>>_detectionIndicesForChannel;
+	std::map<AcqTypeAndDetName, std::map<int, int>>_imageIdxDetIdxMapForChannel;
+	std::map<AcqTypeAndDetName, std::map<int, int>> _detIdxImageIdxMapForChannel;
 	std::vector<std::string> _smartProgramDecisions;
 
 	std::vector<AcqTypeAndDetName> _imagesAcqTypesAndDetNames;

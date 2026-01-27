@@ -175,35 +175,20 @@ int MISGetNumberOfImages(int64_t storerID, char* acqTypeName, char* detectorName
  * 
  * Note: Detection indices are assumed to be sorted in ascending order by image index.
  */
-int MISGetImageIndexAtDetectionIndex(int64_t storerID, char* acqTypeName, char* detectorName, 
-                                     int64_t detectionIndex, int* imageIdxPtr) {
+int MISGetImageIndexAtDetectionIndex(int64_t storerID, char* acqTypeName, char* detectorName,
+	int64_t detectionIndex, int* imageIdxPtr) {
 	return HandleExceptions([&]() {
 		AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
 		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
+
 		int nImages = storer->getNumberOfStoredImages(acqTypeAndDetName);
-		if (nImages == 0) {
-			*imageIdxPtr = -1;
-			return;
-		}
-		if (detectionIndex < storer->getDetectionIndex(acqTypeAndDetName, 0)) {
-			*imageIdxPtr = -1;
-			return;
-		}
-		auto view = std::views::iota(0, nImages) | std::views::transform([&](int i) {
-			return storer->getDetectionIndex(acqTypeAndDetName, i);
-		});
+		std::vector<int> view = storer->getDetectionIndecesForChannel(acqTypeAndDetName);
 		auto it = std::ranges::lower_bound(view, detectionIndex);
-		if (it == view.end()) {
-			*imageIdxPtr = nImages - 1;
-			return;
-		}
-		if (*it == detectionIndex) {
-			*imageIdxPtr = std::distance(view.begin(), it);
-		} else {
-			*imageIdxPtr = std::distance(view.begin(), it - 1);
-		}
-	});	
+		int idx = std::distance(view.begin(), it);
+		*imageIdxPtr = storer->getImageIdxForDetectionIdxForChannel(acqTypeAndDetName, view[idx-1]);
+		});
 }
+
 
 std::vector<AcquiredImage> gImagesInFlight;
 std::mutex gImagesInFlightMutex;
