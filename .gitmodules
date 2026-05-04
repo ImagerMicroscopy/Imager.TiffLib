@@ -1,3 +1,0 @@
-[submodule "subprojects/lnbtiff"]
-	path = subprojects/lnbtiff
-	url = git@bitbucket.org:dedeckerlab/lnbtiff.git

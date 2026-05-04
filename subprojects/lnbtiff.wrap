@@ -1,0 +1,7 @@
+[wrap-git]
+url = https://bitbucket.org/dedeckerlab/lnbtiff.git
+revision = ae53be91b87d1e977136506c6d5da2ce517155d1
+depth = 1
+
+[provide]
+dependency_names = lnbtiff

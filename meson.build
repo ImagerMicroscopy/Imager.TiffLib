@@ -6,8 +6,7 @@ cc = meson.get_compiler('cpp')
 
 incDir = include_directories('include')
 
-lnbtiff_proj = subproject('lnbtiff')
-lnbtiff_dep = lnbtiff_proj.get_variable('liblnbtiff_dep')
+lnbtiff_dep = dependency('lnbtiff', required : true)
 
 
 subdir('src')       # stores files to compile in 'MIMSources' variable
