@@ -12,12 +12,12 @@ public:
 	BasicTIFFWriter(const std::string& filePath);
 	~BasicTIFFWriter();
 
-	void addNewImage(const std::vector<std::uint16_t>& data, const PixelType pixelType, const std::pair<int, int>& size);
+	void addNewImage(const std::vector<std::uint16_t>& data, const LNBTIFF::PixelFormat pixelType, const std::pair<int, int>& size);
 
 private:
 	void finalize();
 
-	TIFFWriter _tiffWriter;
+	LNBTIFF::TIFFWriter _tiffWriter;
 };
 
 class BasicTIFFReader {
@@ -35,7 +35,7 @@ public:
 	ReadImage readImage(size_t imageIdx);
 
 private:
-	TIFFFile _tiffFile;
+	LNBTIFF::TIFFFile _tiffFile;
 };
 
 #endif

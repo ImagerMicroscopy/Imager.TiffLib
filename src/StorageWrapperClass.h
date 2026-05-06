@@ -24,7 +24,7 @@ public:
 	virtual std::int64_t getDetectionIndex(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const = 0;
 	virtual const std::vector<std::string>& getStagePositionNames() const = 0;
 	virtual std::string getStagePositionName(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const = 0;
-	virtual const std::vector<int>& getDetectionIndecesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const = 0;
+	virtual const std::vector<int>& getDetectionIndicesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const = 0;
 	virtual const std::vector<std::string>& getSmartProgramDecisions() const = 0;
 	virtual std::int64_t getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const = 0;
 	virtual std::int64_t  getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const = 0;

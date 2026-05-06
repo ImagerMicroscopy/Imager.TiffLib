@@ -29,7 +29,7 @@ public:
 	double getTimePoint(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
 	std::int64_t getNumberOfDetections() const override;
 	std::int64_t getDetectionIndex(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
-	const std::vector<int>& getDetectionIndecesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const override;
+	const std::vector<int>& getDetectionIndicesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const override;
 	std::int64_t getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const override;
 	std::int64_t getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
 	const std::vector<std::string>& getStagePositionNames() const override;
@@ -50,7 +50,7 @@ private:
         										 tinyxml2::XMLElement*& lastMapAnnotationElem);
 
     std::string _filePath;
-    TIFFFile _tiffFile;
+    LNBTIFF::TIFFFile _tiffFile;
     std::uint64_t _nImagesTotal;
     std::vector<uint64_t> _ifdOffsets;
     tinyxml2::XMLDocument _omeDoc;

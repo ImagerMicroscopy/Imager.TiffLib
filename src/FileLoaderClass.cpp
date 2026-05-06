@@ -77,7 +77,7 @@ std::int64_t FileLoaderClass::getDetectionIdxForImageIdxForChannel(const AcqType
 
 
 
-const std::vector<int>& FileLoaderClass::getDetectionIndecesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const {
+const std::vector<int>& FileLoaderClass::getDetectionIndicesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const {
     return _detectionIndicesForChannel.at(acqTypeAndDetName);
 }
 
@@ -99,31 +99,24 @@ AcquiredImage FileLoaderClass::_derivedReadImage(const AcqTypeAndDetName& acqTyp
 //    int linearIdx = imageIndex;
 	std::uint64_t imageLength, imageWidth, nBytesInImage;
     int64_t detectionIndex = getDetectionIdxForImageIdxForChannel(acqTypeAndDetName, imageIndex);
-	TagType pixelType;
-	_tiffFile.getImageDimensions(imageIndex, imageLength, imageWidth, pixelType, nBytesInImage);
-	if ((pixelType != TIFF_SHORT) && (pixelType != TIFF_DOUBLE)) {
+	LNBTIFF::PixelFormat pixelFormat;
+	_tiffFile.getImageDimensions(imageIndex, imageLength, imageWidth, pixelFormat, nBytesInImage);
+	if ((pixelFormat != LNBTIFF::Mono16) && (pixelFormat != LNBTIFF::Float64)) {
 		throw std::runtime_error("Not a 16-bit or double image");
 	}
 
-	PixelType outputPixelType;
-	if (pixelType == TIFF_SHORT) {
-		outputPixelType = kInt16;
-	} else if (pixelType == TIFF_DOUBLE) {
-		outputPixelType = kFP64;
-	} else {
-		throw std::runtime_error("unknown pixel type when reading from disk");
-	}
+	LNBTIFF::PixelFormat outputPixelFormat = pixelFormat;
 
 	double timePoint = _imagesTimepoints.at(acqTypeAndDetName).at(detectionIndex);
 	StagePosition stagePosition = _imagesStagePositions.at(acqTypeAndDetName).at(detectionIndex);
 	std::string stagePositionName = _imagesStagePositionNamesAtDetectionIndices.at(detectionIndex);
 
 	std::pair<int, int> imageSize(imageWidth, imageLength);
-	std::vector<std::uint16_t> imageData(nBytesInImage / sizeof(std::uint16_t));
+	std::vector<std::uint8_t> imageData(nBytesInImage);
 
-	_tiffFile.loadImageData(imageIndex, reinterpret_cast<std::uint8_t*>(imageData.data()), imageData.size() * sizeof(std::uint16_t));
+	_tiffFile.loadImageData(imageIndex, reinterpret_cast<std::uint8_t*>(imageData.data()), imageData.size());
 
-	AcquiredImage image(std::move(imageData), outputPixelType, imageSize, timePoint, stagePosition, detectionIndex, stagePositionName);
+	AcquiredImage image(std::move(imageData), outputPixelFormat, imageSize, timePoint, stagePosition, detectionIndex, stagePositionName);
     return image;
 }
 

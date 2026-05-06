@@ -24,8 +24,8 @@ public:
 	AcqTypeAndDetName acqTypeAndDetName;
 	int indexWithinAcqAndDet;
 	std::pair<int, int> imageDimensions;
-    std::vector<std::uint16_t> imageData;
-	PixelType pixelType;
+    std::vector<std::uint8_t> imageData;
+	LNBTIFF::PixelFormat pixelFormat;
 };
 
 class FileStorageClass : public StorageWrapperClass {
@@ -43,8 +43,8 @@ public:
 	std::int64_t getDetectionIndex(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
 	const std::vector<std::string>& getStagePositionNames() const override;
 	std::string getStagePositionName(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
-	const std::vector<int>& getDetectionIndecesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const override;
-	std::int64_t FileStorageClass::getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const override;
+	const std::vector<int>& getDetectionIndicesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const override;
+	std::int64_t getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const override;
 	std::int64_t getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
 
 	void addNewImage(const AcqTypeAndDetName& acqTypeAndDetName, AcquiredImage& newImage);
@@ -63,7 +63,7 @@ private:
     std::string _generateOMEXML() const;
 
     std::string _filePath;
-    std::shared_ptr<TIFFWriter> _outputStream;
+    std::shared_ptr<LNBTIFF::TIFFWriter> _outputStream;
 	std::string _serializedProgram;
 	size_t _nImagesSeen;
 	bool _finishedAddingImages;

@@ -11,15 +11,15 @@
 FileStorageClass::FileStorageClass(const std::string& filePath, const std::string& serializedProgram) :
 	_filePath(filePath)
   , _serializedProgram(serializedProgram)
-  , _asyncWorkerThread([&] () {_asyncWorker(); })
   , _nImagesSeen(0)
   , _finishedAddingImages(false)
+  , _asyncWorkerThread([&] () {_asyncWorker(); })
   , _workerHasError(false)
 {
     _initialTimePoint = std::chrono::system_clock::now();
     std::string initialImageDescription = _generateOMEXML();
 
-    _outputStream = std::shared_ptr<TIFFWriter>(new TIFFWriter(filePath, initialImageDescription));
+    _outputStream = std::make_shared<LNBTIFF::TIFFWriter>(filePath, initialImageDescription);
 }
 
 FileStorageClass::~FileStorageClass() {
@@ -113,7 +113,7 @@ std::int64_t  FileStorageClass::getDetectionIdxForImageIdxForChannel(const AcqTy
 	return _detIdxImageIdxMapForChannel.at(acqTypeAndDetName).at(imageIndex);
 }
 
-const std::vector<int>& FileStorageClass::getDetectionIndecesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const {
+const std::vector<int>& FileStorageClass::getDetectionIndicesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const {
 
 	return _detectionIndicesForChannel.at(acqTypeAndDetName);
 }
@@ -147,7 +147,7 @@ void FileStorageClass::_queueAsyncImageWrite(const AcqTypeAndDetName& acqTypeAnd
 	queuedData->imageDimensions = newImage.imageSize;
 	queuedData->indexWithinAcqAndDet = indexWithinAcqTypeAndDet;
     std::swap(queuedData->imageData, newImage.imageData);
-	queuedData->pixelType = newImage.pixelType;
+	queuedData->pixelFormat = newImage.pixelFormat;
 
     {
         std::lock_guard<std::mutex> lock(_queueMutex);
@@ -166,8 +166,8 @@ AcquiredImage FileStorageClass::_derivedGetImage(const AcqTypeAndDetName& acqTyp
 
 	// return blank image if not yet seen
 	if ((_imageIndicesForChannel.count(acqTypeAndDetName) == 0) || (imageIndex >= _imageIndicesForChannel.at(acqTypeAndDetName).size())) {
-		std::vector<std::uint16_t> imageData; imageData.resize(4, 0);
-		AcquiredImage image(std::move(imageData), kInt16, {2, 2}, -1.0, StagePosition(), -1, "");
+		std::vector<std::uint8_t> imageData; imageData.resize(4 * 2, 0);
+		AcquiredImage image(std::move(imageData), LNBTIFF::Mono16, {2, 2}, -1.0, StagePosition(), -1, "");
 		return image;
 	}
 
@@ -175,10 +175,10 @@ AcquiredImage FileStorageClass::_derivedGetImage(const AcqTypeAndDetName& acqTyp
     size_t nPixels = imageSize.first * imageSize.second;
 	std::int64_t detectionIndex = _imagesDetectionIndices.at(acqTypeAndDetName.first).at(imageIndex);
 
-	AcquiredImage image({}, kInt16, imageSize, _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex),
+	AcquiredImage image({}, LNBTIFF::Mono16, imageSize, _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex),
 			            _imagesStagePositions.at(acqTypeAndDetName).at(imageIndex), detectionIndex,
 			            _imagesStagePositionNames.at(detectionIndex));
-	image.imageData.resize(nPixels);
+	image.imageData.resize(nPixels * sizeof(std::uint16_t));
 
     // read the data from the queue or just from disk
     // check if the data is in the queue
@@ -190,14 +190,14 @@ AcquiredImage FileStorageClass::_derivedGetImage(const AcqTypeAndDetName& acqTyp
         if (it != _asyncQueue.end()) {
             // data is in the queue - just fetch it from there
             memcpy(image.imageData.data(), (*it)->imageData.data(), nPixels * sizeof(std::uint16_t));
-			image.pixelType = (*it)->pixelType;
+			image.pixelFormat = (*it)->pixelFormat;
 			return image;
         }
     }
     // if we are still here then we need to fetch the data from disk
-    std::pair<std::vector<uint16_t>, PixelType> loadedImage = _outputStream->readImage(_imageIndicesForChannel.at(acqTypeAndDetName).at(imageIndex));
+    std::pair<std::vector<uint8_t>, LNBTIFF::PixelFormat> loadedImage = _outputStream->readImage(_imageIndicesForChannel.at(acqTypeAndDetName).at(imageIndex));
 	std::swap(loadedImage.first, image.imageData);
-	image.pixelType = loadedImage.second;
+	image.pixelFormat = loadedImage.second;
 	return image;
 }
 
@@ -219,7 +219,7 @@ void FileStorageClass::_asyncWorker() {
                 }
                 newData = _asyncQueue.front(); // important: we get the front element but do not remove it from the queue
             }
-            _outputStream->writeImage(newData->imageData, newData->pixelType, newData->imageDimensions);
+            _outputStream->writeImage(newData->imageData, newData->pixelFormat, newData->imageDimensions);
             {
                 std::lock_guard<std::mutex> lock(_queueMutex);
                 _asyncQueue.pop_front();  // now that everything is written to file we remove the element from the queue

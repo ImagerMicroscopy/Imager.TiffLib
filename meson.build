@@ -10,20 +10,18 @@ lnbtiff_dep = dependency('lnbtiff', required : true)
 
 
 subdir('src')       # stores files to compile in 'MIMSources' variable
-subdir('resources') # stores files to compile in 'igorResource' variable
-
-libnames = ['version']
-libraries = []
-foreach ln : libnames
-    libraries += cc.find_library(ln)
-endforeach
 
 
+# Do not export functions by default on non-Windows.
+cpp_args_common = ['-DNOMINMAX']
+if host_machine.system() != 'windows' and cc.has_argument('-fvisibility=hidden')
+  cpp_args_common += ['-fvisibility=hidden']
+endif
 
 library('MeasurementImageStorageDLL',
-        MIMSources, 'src/MeasurementImageStorageDLL.cpp',
-        include_directories: [incDir],
-        dependencies : [libraries, lnbtiff_dep],
-        name_suffix : 'dll',
-        cpp_args : ['-DNOMINMAX'],
-        install : true)
+  MIMSources, 'src/MeasurementImageStorageDLL.cpp',
+  include_directories: [incDir],
+  dependencies : [lnbtiff_dep],
+  name_suffix : 'dll',
+  cpp_args : cpp_args_common,
+  install : true)

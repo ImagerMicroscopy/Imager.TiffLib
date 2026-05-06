@@ -6,12 +6,22 @@
 
 #include <cstdint>
 
-
-
-#ifdef COMPILING_MeasurementImagesStorageDLL_H
-#define LIBSPEC __declspec(dllexport)
+#if defined(_WIN32) || defined(_WIN64)
+    #if defined(COMPILING_MeasurementImagesStorageDLL_H) || defined(COMPILING_MEASUREMENTIMAGESTORAGEDLL)
+        #define LIBSPEC __declspec(dllexport)
+    #else
+        #define LIBSPEC __declspec(dllimport)
+    #endif
 #else
-#define LIBSPEC __declspec(dllimport)
+    #if defined(COMPILING_MeasurementImagesStorageDLL_H) || defined(COMPILING_MEASUREMENTIMAGESTORAGEDLL)
+        #if defined(__has_attribute) && __has_attribute(visibility)
+            #define LIBSPEC __attribute__((visibility("default")))
+        #else
+            #define LIBSPEC
+        #endif
+    #else
+        #define LIBSPEC
+    #endif
 #endif
 
 #ifdef __cplusplus

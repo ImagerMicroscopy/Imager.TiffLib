@@ -13,10 +13,10 @@ typedef std::pair<std::string, std::string> AcqTypeAndDetName;
 
 class AcquiredImage {
 public:
-	AcquiredImage(std::vector<std::uint16_t> imageData, PixelType pixelType, std::pair<int, int> imageSize, double timePoint,
+	AcquiredImage(std::vector<std::uint8_t> imageData, LNBTIFF::PixelFormat pixelFormat, std::pair<int, int> imageSize, double timePoint,
 				  StagePosition stagePosition, std::int64_t detectionIndex, const std::string& stagePositionName) :
 		imageData(std::move(imageData)),
-		pixelType(pixelType),
+		pixelFormat(pixelFormat),
 		imageSize(imageSize),
 		timePoint(timePoint),
 		stagePosition(stagePosition),
@@ -24,8 +24,8 @@ public:
 		stagePositionName(stagePositionName)
 	{}
 
-	std::vector<std::uint16_t> imageData;
-	PixelType pixelType;
+	std::vector<std::uint8_t> imageData;
+	LNBTIFF::PixelFormat pixelFormat;
 	std::pair<int, int> imageSize;
 	double timePoint;
 	StagePosition stagePosition;

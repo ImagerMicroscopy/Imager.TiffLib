@@ -114,11 +114,11 @@ int MISAddNewImage(int64_t storerID, char* acqTypeName, char* detectorName, doub
 		if (storer == nullptr) throw std::runtime_error("Adding image to non-output storer");
 		AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
 
-		std::vector<std::uint16_t> imageData(nRows * nCols);
-		memcpy(imageData.data(), data, nRows * nCols * sizeof(std::uint16_t));
+		std::vector<std::uint8_t> imageData(nRows * nCols * sizeof(std::uint16_t));
+		memcpy(imageData.data(), data, imageData.size());
 		StagePosition stagePosition = std::make_tuple(stageX, stageY, stageZ);
 
-		AcquiredImage acqImage(std::move(imageData), kInt16, {nRows, nCols}, timePoint, stagePosition, detectionIndex, stagePositionName);
+		AcquiredImage acqImage(std::move(imageData), LNBTIFF::Mono16, {nRows, nCols}, timePoint, stagePosition, detectionIndex, stagePositionName);
 		storer->addNewImage(acqTypeAndDetName, acqImage);
 	});
 }
@@ -182,7 +182,7 @@ int MISGetImageIndexAtDetectionIndex(int64_t storerID, char* acqTypeName, char* 
 		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
 
 		int nImages = storer->getNumberOfStoredImages(acqTypeAndDetName);
-		std::vector<int> view = storer->getDetectionIndecesForChannel(acqTypeAndDetName);
+		std::vector<int> view = storer->getDetectionIndicesForChannel(acqTypeAndDetName);
 		auto it = std::ranges::lower_bound(view, detectionIndex);
 		int idx = std::distance(view.begin(), it);
 		*imageIdxPtr = storer->getImageIdxForDetectionIdxForChannel(acqTypeAndDetName, view[idx-1]);
@@ -222,7 +222,7 @@ int MISGetImage(int64_t storerID, char* acqTypeName, char* detectorName, int ima
             std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
             gImagesInFlight.emplace_back(std::move(image));
             AcquiredImage& newImage = gImagesInFlight.at(gImagesInFlight.size() - 1);
-            *dataLocationPtr = newImage.imageData.data();
+            *dataLocationPtr = reinterpret_cast<uint16_t*>(newImage.imageData.data());
             *nRows = image.imageSize.first;
             *nCols = image.imageSize.second;
         }
@@ -243,7 +243,7 @@ int MISReleaseImageData(uint16_t* dataPtr) {
 	return HandleExceptions([&]() {
 		std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
 		auto it = std::find_if(gImagesInFlight.begin(), gImagesInFlight.end(), [&](const AcquiredImage& im) -> bool {
-			return (im.imageData.data() == dataPtr);
+			return (im.imageData.data() == reinterpret_cast<uint8_t*>(dataPtr));
 		});
 		if (it == gImagesInFlight.end()) {
 			throw std::runtime_error("no such image in flight");
