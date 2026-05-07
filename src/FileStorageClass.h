@@ -94,10 +94,10 @@ private:
 	std::map<AcqTypeAndDetName, std::vector<int>> _detectionIndicesForChannel;
 	
 	/// @brief Cross-reference map: Look up the acq/det combination image index for a given detection index
-	std::map<AcqTypeAndDetName, std::map<int, int>> _indexWithinAcqDetToDetectionIndexMap;
+	std::map<AcqTypeAndDetName, std::map<int64_t, int>> _indexWithinAcqDetToDetectionIndexMap;
 	
 	/// @brief Cross-reference map: Look up the logical detection index using the index within a particular acq/det combination
-	std::map<AcqTypeAndDetName, std::map<int, int>> _detectionIndexToIndexWithinAcqDetMap;
+	std::map<AcqTypeAndDetName, std::map<int, int64_t>> _detectionIndexToIndexWithinAcqDetMap;
 	
 	/// @brief List of serialised JSON strings tracking dynamic or algorithmic decisions made during the program
 	std::vector<std::string> _smartProgramDecisions;

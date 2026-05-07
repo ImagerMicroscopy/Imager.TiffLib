@@ -5,67 +5,59 @@
 
 FileLoaderClass::FileLoaderClass(const std::string& filePath) :
     _filePath(filePath),
-	_tiffFile(filePath)
+    _tiffFile(filePath)
 {
     std::string ome = _loadOMEString();
     if (_omeDoc.Parse(ome.c_str()) != tinyxml2::XML_SUCCESS) {
         throw std::runtime_error("Couldn't parse image description as XML");
     }
-	_parseOMEXML();
+    _parseOMEXML();
 }
 
 FileLoaderClass::~FileLoaderClass() {
 }
 
 const std::vector<std::string> FileLoaderClass::getAcquisitionNames() const {
-	std::vector<std::string> acqNames;
-	for (const auto& n : _acquisitionNames) {
-		acqNames.push_back(n);
-	}
-	return acqNames;
+    std::vector<std::string> acqNames;
+    for (const auto& n : _acquisitionNames) {
+        acqNames.push_back(n);
+    }
+    return acqNames;
 }
 
 const std::vector<std::string> FileLoaderClass::getDetectorNames() const {
-	std::vector<std::string> detNames;
-	for (const auto& n : _detectorNames) {
-		detNames.push_back(n);
-	}
-	return detNames;
+    std::vector<std::string> detNames;
+    for (const auto& n : _detectorNames) {
+        detNames.push_back(n);
+    }
+    return detNames;
 }
 
 AcquiredImage FileLoaderClass::getImage(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) {
-	return _derivedReadImage(acqTypeAndDetName, imageIndex);
+    return _derivedReadImage(acqTypeAndDetName, imageIndex);
 }
 
 int FileLoaderClass::getNumberOfStoredImages(const AcqTypeAndDetName& acqTypeAndDetName) const {
     if (_imageIndicesForChannel.count(acqTypeAndDetName) > 0) {
-        int numimages = 0;
-            for (const auto& [key, value] : _imageIndicesForChannel) {
-                if (key.first==acqTypeAndDetName.first)
-                {
-                    numimages += value.size();
-                }
-            }
-
-        return numimages;
-	} else {
-		return 0;
-	}
+        return _imageIndicesForChannel.at(acqTypeAndDetName).size();
+    } else {
+        return 0;
+    }
 }
 
 StagePosition FileLoaderClass::getStagePosition(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const {
-	return _imagesStagePositions.at(acqTypeAndDetName).at(imageIndex);
+    return _imagesStagePositions.at(acqTypeAndDetName).at(imageIndex);
 }
 double FileLoaderClass::getTimePoint(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const {
-	return _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex);
+    return _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex);
 }
 
 std::int64_t FileLoaderClass::getNumberOfDetections() const {
-	return _maxdetectionIdx+1;
+    return _maxdetectionIdx+1;
 }
 
 std::int64_t FileLoaderClass::getDetectionIndex(const AcqTypeAndDetName &acqTypeAndDetName, const int imageIndex) const {
-	return _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
+    return _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
 }
 
 std::int64_t FileLoaderClass::getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const {
@@ -82,60 +74,57 @@ const std::vector<int>& FileLoaderClass::getDetectionIndicesForChannel(const Acq
 }
 
 const std::vector<std::string> & FileLoaderClass::getStagePositionNames() const {
-	return _imagesStagePositionNamesAtDetectionIndices;
+    return _imagesStagePositionNamesAtDetectionIndices;
 }
 
 std::string FileLoaderClass::getStagePositionName(const AcqTypeAndDetName &acqTypeAndDetName, const int imageIndex) const {
-	int64_t detectionIndex = getDetectionIndex(acqTypeAndDetName, imageIndex);
-	return _imagesStagePositionNamesAtDetectionIndices.at(detectionIndex);
+    int64_t detectionIndex = getDetectionIndex(acqTypeAndDetName, imageIndex);
+    return _imagesStagePositionNamesAtDetectionIndices.at(detectionIndex);
 }
 
 const std::vector<std::string> & FileLoaderClass::getSmartProgramDecisions() const {
-	return _smartProgramDecisions;
+    return _smartProgramDecisions;
 }
 
 AcquiredImage FileLoaderClass::_derivedReadImage(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) {
-//	int linearIdx = _imageIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
-//    int linearIdx = imageIndex;
-	std::uint64_t imageLength, imageWidth, nBytesInImage;
+    int linearIdx = _imageIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
+    std::uint64_t imageLength, imageWidth, nBytesInImage;
     int64_t detectionIndex = getDetectionIdxForImageIdxForChannel(acqTypeAndDetName, imageIndex);
-	LNBTIFF::PixelFormat pixelFormat;
-	_tiffFile.getImageDimensions(imageIndex, imageLength, imageWidth, pixelFormat, nBytesInImage);
-	if ((pixelFormat != LNBTIFF::Mono16) && (pixelFormat != LNBTIFF::Float64)) {
-		throw std::runtime_error("Not a 16-bit or double image");
-	}
+    LNBTIFF::PixelFormat pixelFormat;
+    _tiffFile.getImageDimensions(linearIdx, imageLength, imageWidth, pixelFormat, nBytesInImage);
+    if ((pixelFormat != LNBTIFF::Mono16) && (pixelFormat != LNBTIFF::Float64)) {
+        throw std::runtime_error("Not a 16-bit or double image");
+    }
 
-	LNBTIFF::PixelFormat outputPixelFormat = pixelFormat;
+    LNBTIFF::PixelFormat outputPixelFormat = pixelFormat;
 
-	double timePoint = _imagesTimepoints.at(acqTypeAndDetName).at(detectionIndex);
-	StagePosition stagePosition = _imagesStagePositions.at(acqTypeAndDetName).at(detectionIndex);
-	std::string stagePositionName = _imagesStagePositionNamesAtDetectionIndices.at(detectionIndex);
+    double timePoint = _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex);
+    StagePosition stagePosition = _imagesStagePositions.at(acqTypeAndDetName).at(imageIndex);
+    std::string stagePositionName = _imagesStagePositionNamesAtDetectionIndices.at(detectionIndex);
 
-	std::pair<int, int> imageSize(imageWidth, imageLength);
-	std::vector<std::uint8_t> imageData(nBytesInImage);
+    std::pair<int, int> imageSize(imageWidth, imageLength);
+    std::vector<std::uint8_t> imageData(nBytesInImage);
 
-	_tiffFile.loadImageData(imageIndex, reinterpret_cast<std::uint8_t*>(imageData.data()), imageData.size());
+    _tiffFile.loadImageData(linearIdx, reinterpret_cast<std::uint8_t*>(imageData.data()), imageData.size());
 
-	AcquiredImage image(std::move(imageData), outputPixelFormat, imageSize, timePoint, stagePosition, detectionIndex, stagePositionName);
+    AcquiredImage image(std::move(imageData), outputPixelFormat, imageSize, timePoint, stagePosition, detectionIndex, stagePositionName);
     return image;
 }
 
 std::string FileLoaderClass::_loadOMEString() {
-	return _tiffFile.getTagStringValueOrError(0, TIFFTAG_IMAGEDESCRIPTION);
+    return _tiffFile.getTagStringValueOrError(0, TIFFTAG_IMAGEDESCRIPTION);
 }
 
 void FileLoaderClass::_parseOMEXML() {
     // load the imager metadata
-	tinyxml2::XMLElement* omeElem = _omeDoc.FirstChildElement("OME");
+    tinyxml2::XMLElement* omeElem = _omeDoc.FirstChildElement("OME");
     
-	_extractImagerMetaData(omeElem);
-	if (_imagerProgramDescription.empty()) {
-		throw std::runtime_error("No Imager program description found");
-	}
+    _extractImagerMetaData(omeElem);
+    if (_imagerProgramDescription.empty()) {
+        throw std::runtime_error("No Imager program description found");
+    }
 
-	tinyxml2::XMLElement* structuredAnnotationsElem = omeElem->FirstChildElement("StructuredAnnotations");
-    // Optimization: remember last found MapAnnotation for fast consecutive lookup
-    tinyxml2::XMLElement* lastMapAnnotationElem = nullptr;
+    tinyxml2::XMLElement* structuredAnnotationsElem = omeElem->FirstChildElement("StructuredAnnotations");
 
     tinyxml2::XMLElement* imageElem = omeElem->FirstChildElement("Image");
     if (imageElem == nullptr) throw std::runtime_error("No Image child element found");
@@ -152,175 +141,110 @@ void FileLoaderClass::_parseOMEXML() {
         if (planeElem->QueryDoubleAttribute("PositionZ", &z) != tinyxml2::XML_SUCCESS) throw std::runtime_error("No stage position found");
 
         tinyxml2::XMLElement* channelElem = pixelsElem->FirstChildElement("Channel");
-    	if (channelElem == nullptr)
-    		throw std::runtime_error("No channel element found");
-    	const char* elemID = nullptr;
-    	std::string detectorName, acqName, stagePositionName;
-    	std::int64_t detectionIndex = -1;
-		const char* strPtr = nullptr;
-    	bool haveDetectionIdxAndStagePositionName = false;
+        if (channelElem == nullptr)
+            throw std::runtime_error("No channel element found");
+        const char* elemID = nullptr;
+        std::string detectorName, acqName, stagePositionName;
+        std::int64_t detectionIndex = -1;
+        bool haveDetectionIdxAndStagePositionName = false;
 
-    	// First check if this image has per-image MapAnnotation (new compliant format)
-    	// Look for AnnotationRef elements in the current Image
-    	tinyxml2::XMLElement* imageAnnotationElem = nullptr;
-    	if (structuredAnnotationsElem != nullptr) {
-    		// Find AnnotationRef elements in the current Image
-    		for (tinyxml2::XMLElement* annotationRefElem = imageElem->FirstChildElement("AnnotationRef"); 
-    			 annotationRefElem != nullptr; 
-    			 annotationRefElem = annotationRefElem->NextSiblingElement("AnnotationRef")) {
-    			
-    			const char* refID = annotationRefElem->Attribute("ID");
-    			if (refID != nullptr && !(strcmp(refID, "Annotation:ImagerMetadata")==0)) {
-    				imageAnnotationElem = _findMapAnnotationByID(structuredAnnotationsElem, refID, lastMapAnnotationElem);
-    				if (imageAnnotationElem) break;
-    			}
-    		}
-    	}
-    	
-    	if (imageAnnotationElem != nullptr) {
-    		// New format: read from per-image MapAnnotation - be strict about required values
-    		tinyxml2::XMLElement* valueElem = imageAnnotationElem->FirstChildElement("Value");
-    		if (valueElem == nullptr) throw std::runtime_error("No Value element in per-image MapAnnotation");
-    		
-            bool foundAcqName = false, foundDetectorName = false, foundDetectionIndex = false, foundStagePositionName = false;
-    		
-    		for (tinyxml2::XMLElement* mapPairElem = valueElem->FirstChildElement("M"); mapPairElem != nullptr; mapPairElem = mapPairElem->NextSiblingElement("M")) {
-    			const char* valueID = mapPairElem->Attribute("K");
+        // 1. Try to read properties from the simplified OME-XML encoding
+        haveDetectionIdxAndStagePositionName = _tryParseNewOMEFormat(imageElem, channelElem, detectionIndex, stagePositionName, acqName, detectorName);
 
-                if (valueID != nullptr && strcmp(valueID, "AcquisitionName") == 0) {
-    				const char* text = mapPairElem->GetText();
-    				if (text == nullptr) throw std::runtime_error("Missing AcquisitionName text in per-image MapAnnotation");
-    				acqName = text;
-    				foundAcqName = true;
-    			} else if (valueID != nullptr && strcmp(valueID, "DetectorName") == 0) {
-    				const char* text = mapPairElem->GetText();
-    				if (text == nullptr) throw std::runtime_error("Missing DetectorName text in per-image MapAnnotation");
-    				detectorName = text;
-    				foundDetectorName = true;
-    			} else if (valueID != nullptr && strcmp(valueID, "DetectionIndex") == 0) {
-    				const char* text = mapPairElem->GetText();
-    				if (text == nullptr) throw std::runtime_error("Missing DetectionIndex text in per-image MapAnnotation");
-    				detectionIndex = std::stoll(text);
-    				foundDetectionIndex = true;
-    			} else if (valueID != nullptr && strcmp(valueID, "StagePositionName") == 0) {
-    				const char* text = mapPairElem->GetText();
-    				if (text == nullptr) {
-    					stagePositionName = "";
-    				} else {
-    					stagePositionName = text;
-    				}
-    				foundStagePositionName = true;
-    			}
-    		}
-
-                // Ensure all required values were found in the new format
-            if (!foundAcqName) throw std::runtime_error("Missing AcquisitionName in per-image MapAnnotation");
-            if (!foundDetectorName) throw std::runtime_error("Missing DetectorName in per-image MapAnnotation");
-            if (!foundDetectionIndex) throw std::runtime_error("Missing DetectionIndex in per-image MapAnnotation");
-            if (!foundStagePositionName) throw std::runtime_error("Missing StagePositionName in per-image MapAnnotation");
-
-            haveDetectionIdxAndStagePositionName = true;
-
- 
-    	} else {
-    		// Old format: read from Channel attributes
-    		if (channelElem->QueryStringAttribute("DetectorName", &strPtr)  != tinyxml2::XML_SUCCESS) {
-    			detectorName = "UnknownCam";	// old files didn't have this attribute
-    		} else {
-    			detectorName = strPtr;
-    		}
-    		if (channelElem->Attribute("AcquisitionName") != nullptr) {
-    			// new format that also stores detection indices and stage position names
-    			if (channelElem->QueryStringAttribute("AcquisitionName", &strPtr) != tinyxml2::XML_SUCCESS) throw std::runtime_error("No acquisition name found");
-    			acqName = strPtr;
-    			if (channelElem->QueryAttribute("DetectionIndex", &detectionIndex) != tinyxml2::XML_SUCCESS) throw std::runtime_error("No detection index found");
-    			if (channelElem->QueryStringAttribute("StagePositionName", &strPtr) != tinyxml2::XML_SUCCESS) throw std::runtime_error("No stage position name found");
-    			stagePositionName = strPtr;
-    			haveDetectionIdxAndStagePositionName = true;
-    		} else {
-    			// old format stored the acq name in the "Name" attribute
-    			if (channelElem->QueryStringAttribute("Name", &strPtr) != tinyxml2::XML_SUCCESS) throw std::runtime_error("No acquisition name found");
-    			acqName = strPtr;
-    			stagePositionName = kNoStagePositionNameInformationStr;
-    		}
-
-    	}
+        if (!haveDetectionIdxAndStagePositionName) {
+            // Old format: read from Channel attributes
+            _parseOldOMEFormat(channelElem, detectionIndex, stagePositionName, acqName, detectorName);
+            if (stagePositionName != kNoStagePositionNameInformationStr) {
+                haveDetectionIdxAndStagePositionName = true;
+            }
+        }
 
         _acquisitionNames.insert(acqName);
         _detectorNames.insert(detectorName);
         AcqTypeAndDetName acqTypeAndDetName(acqName, detectorName);
         _imageIndicesForChannel[acqTypeAndDetName].push_back(imageIdx);
+        int indexWithinAcqDet = _imageIndicesForChannel[acqTypeAndDetName].size() - 1;
+
         _imagesTimepoints[acqTypeAndDetName].push_back(t);
         _imagesStagePositions[acqTypeAndDetName].push_back(StagePosition(x, y, z));
         if (haveDetectionIdxAndStagePositionName) {
             _imagesDetectionIndices[acqName].push_back(detectionIndex);
             _detectionIndicesForChannel[acqTypeAndDetName].push_back(detectionIndex);
-            _indexWithinAcqDetToDetectionIndexMap[acqTypeAndDetName][detectionIndex] = imageIdx;
-            _detectionIndexToIndexWithinAcqDetMap[acqTypeAndDetName][imageIdx] = detectionIndex;
+            _indexWithinAcqDetToDetectionIndexMap[acqTypeAndDetName][detectionIndex] = indexWithinAcqDet;
+            _detectionIndexToIndexWithinAcqDetMap[acqTypeAndDetName][indexWithinAcqDet] = detectionIndex;
             if (detectionIndex>_maxdetectionIdx){ 
                 _maxdetectionIdx = detectionIndex;
             }
             if (_imagesStagePositionNamesAtDetectionIndices.size() <= detectionIndex) {
-            	_imagesStagePositionNamesAtDetectionIndices.resize(detectionIndex + 1);
+                _imagesStagePositionNamesAtDetectionIndices.resize(detectionIndex + 1);
             }
             _imagesStagePositionNamesAtDetectionIndices[detectionIndex] = stagePositionName;
         }
         
     }
 
-	if (_imagesDetectionIndices.empty()) {
-		// means this was an older file that did not include the detection indices and stage position names directly
-		// get these by interpreting the program
-		nlohmann::json programDescriptor = nlohmann::json::parse(_imagerProgramDescription);
-		nlohmann::json program = programDescriptor["program"]["program"];
-		std::shared_ptr<ProgramElement> parsedProgram = ParseImagerProgramElement(program);
-		CalculateDetectionIndicesAndStagePositionNames(parsedProgram, _imagesDetectionIndices, _imagesStagePositionNamesAtDetectionIndices);
+    if (_imagesDetectionIndices.empty()) {
+        // means this was an older file that did not include the detection indices and stage position names directly
+        // get these by interpreting the program
+        nlohmann::json programDescriptor = nlohmann::json::parse(_imagerProgramDescription);
+        nlohmann::json program = programDescriptor["program"]["program"];
+        std::shared_ptr<ProgramElement> parsedProgram = ParseImagerProgramElement(program);
+        CalculateDetectionIndicesAndStagePositionNames(parsedProgram, _imagesDetectionIndices, _imagesStagePositionNamesAtDetectionIndices);
 
-		// if the user aborted the measurement then there are fewer images in the file than would be expected based on the program
-		std::int64_t highestDetectionIndex = -1;
-		for (const auto& [acqAndDetNames, imageIndices] : _imageIndicesForChannel) {
-			const std::string& acqName = acqAndDetNames.first;
-			size_t nImagesInChannel = imageIndices.size();
-			std::vector<std::int64_t>& expectedImageIndices = _imagesDetectionIndices[acqName];
-			if (expectedImageIndices.size() > nImagesInChannel) {
-				expectedImageIndices.resize(nImagesInChannel);
-			}
-			if (!expectedImageIndices.empty()) {
-				highestDetectionIndex = std::max(highestDetectionIndex, expectedImageIndices.at(expectedImageIndices.size() - 1));
-			}
-		}
-		_imagesStagePositionNamesAtDetectionIndices.resize(highestDetectionIndex + 1);
-		_maxdetectionIdx = highestDetectionIndex;
-	}
+        // if the user aborted the measurement then there are fewer images in the file than would be expected based on the program
+        std::int64_t highestDetectionIndex = -1;
+        for (const auto& [acqAndDetNames, imageIndices] : _imageIndicesForChannel) {
+            const std::string& acqName = acqAndDetNames.first;
+            size_t nImagesInChannel = imageIndices.size();
+            std::vector<std::int64_t>& expectedImageIndices = _imagesDetectionIndices[acqName];
+            if (expectedImageIndices.size() > nImagesInChannel) {
+                expectedImageIndices.resize(nImagesInChannel);
+            }
+            if (!expectedImageIndices.empty()) {
+                highestDetectionIndex = std::max(highestDetectionIndex, expectedImageIndices.at(expectedImageIndices.size() - 1));
+            }
+            
+            // Populate the cross-reference maps for old format files
+            for (size_t i = 0; i < expectedImageIndices.size(); ++i) {
+                std::int64_t detIdx = expectedImageIndices[i];
+                int indexWithinAcqDet = static_cast<int>(i);
+                _detectionIndicesForChannel[acqAndDetNames].push_back(detIdx);
+                _indexWithinAcqDetToDetectionIndexMap[acqAndDetNames][detIdx] = indexWithinAcqDet;
+                _detectionIndexToIndexWithinAcqDetMap[acqAndDetNames][indexWithinAcqDet] = detIdx;
+            }
+        }
+        _imagesStagePositionNamesAtDetectionIndices.resize(highestDetectionIndex + 1);
+        _maxdetectionIdx = highestDetectionIndex;
+    }
 }
 
 void FileLoaderClass::_extractImagerMetaData(tinyxml2::XMLElement *omeElem) {
-	std::string imagerProgramDescription;
+    std::string imagerProgramDescription;
 
-	// check if the file uses the old (incorrect) encoding of the Imager program, or whether it's using the
-	// new, hopefully correct one
+    // check if the file uses the old (incorrect) encoding of the Imager program, or whether it's using the
+    // new, hopefully correct one
     tinyxml2::XMLElement* imagerAnnotationElem = omeElem->FirstChildElement("MapAnnotation");
-	if (imagerAnnotationElem != nullptr) {
-		// old encoding
-		const char* elemID = nullptr;
-		if ((elemID = imagerAnnotationElem->Attribute("ID")) == nullptr) throw std::runtime_error("Couldn't find MapAnnotation ID");
-		if (strcmp(elemID, "Annotation:ImagerMetadata") != 0) throw std::runtime_error("Couldn't find Imager metadata");
+    if (imagerAnnotationElem != nullptr) {
+        // old encoding
+        const char* elemID = nullptr;
+        if ((elemID = imagerAnnotationElem->Attribute("ID")) == nullptr) throw std::runtime_error("Couldn't find MapAnnotation ID");
+        if (strcmp(elemID, "Annotation:ImagerMetadata") != 0) throw std::runtime_error("Couldn't find Imager metadata");
 
-		tinyxml2::XMLElement* imagerMetadataElem = imagerAnnotationElem->FirstChildElement("Value");
-		if (imagerMetadataElem == nullptr) throw std::runtime_error("No Imager metadata child element");
-		const char* valueID = nullptr;
-		if ((valueID = imagerMetadataElem->Attribute("K")) == nullptr) throw std::runtime_error("No imager metadata key");
-		if (strcmp(valueID, "ImagerProgram") == 0) {
-			imagerProgramDescription = imagerMetadataElem->GetText();
-		} else {
-			throw std::runtime_error("No Imager program description found");
-		}
-	} else {
-		// new encoding
-		tinyxml2::XMLElement* structuredAnnotationsElem = omeElem->FirstChildElement("StructuredAnnotations");
+        tinyxml2::XMLElement* imagerMetadataElem = imagerAnnotationElem->FirstChildElement("Value");
+        if (imagerMetadataElem == nullptr) throw std::runtime_error("No Imager metadata child element");
+        const char* valueID = nullptr;
+        if ((valueID = imagerMetadataElem->Attribute("K")) == nullptr) throw std::runtime_error("No imager metadata key");
+        if (strcmp(valueID, "ImagerProgram") == 0) {
+            imagerProgramDescription = imagerMetadataElem->GetText();
+        } else {
+            throw std::runtime_error("No Imager program description found");
+        }
+    } else {
+        // new encoding
+        tinyxml2::XMLElement* structuredAnnotationsElem = omeElem->FirstChildElement("StructuredAnnotations");
         if (structuredAnnotationsElem == nullptr)
             throw std::runtime_error("No StructuredAnnotations element found");
-		// find the ImagerMetaData element
+        // find the ImagerMetaData element
         tinyxml2::XMLElement* imagerAnnotationElem = nullptr;
         for (tinyxml2::XMLElement* child = structuredAnnotationsElem->FirstChildElement("MapAnnotation"); child != nullptr; child = child->NextSiblingElement("MapAnnotation")) {
             const char* elemID = child->Attribute("ID");
@@ -331,7 +255,7 @@ void FileLoaderClass::_extractImagerMetaData(tinyxml2::XMLElement *omeElem) {
         }
         if (imagerAnnotationElem == nullptr)
             throw std::runtime_error("No Imager metadata annotation found");
-		tinyxml2::XMLElement* valueElem = imagerAnnotationElem->FirstChildElement("Value");
+        tinyxml2::XMLElement* valueElem = imagerAnnotationElem->FirstChildElement("Value");
         if (valueElem == nullptr)
             throw std::runtime_error("No Value element found");
         // Search through all M elements to find both ImagerProgram and SmartProgramDecisions
@@ -364,46 +288,67 @@ void FileLoaderClass::_extractImagerMetaData(tinyxml2::XMLElement *omeElem) {
         // if (!foundSmartDecision) {
         //     throw std::runtime_error("No Smart program decisions found");
         // }
-	}
+    }
 
-	_imagerProgramDescription = imagerProgramDescription;
+    _imagerProgramDescription = imagerProgramDescription;
 }
 
-// Find the per-image MapAnnotation in the file, with the id given by refID.
-// lastMapAnnotationElem is normally a reference to the last found MapAnnotation element (or nullptr),
-// because the MapAnnotation for the next image is likely to directly follow it.
-// Returns: Pointer to the found MapAnnotation element, or nullptr if not found.
-tinyxml2::XMLElement* FileLoaderClass::_findMapAnnotationByID(
-    tinyxml2::XMLElement* structuredAnnotationsElem,
-    const char* refID,
-    tinyxml2::XMLElement*& lastMapAnnotationElem)
-{
-    if (!structuredAnnotationsElem || !refID) return nullptr;
-    tinyxml2::XMLElement* foundMapAnnotation = nullptr;
-    tinyxml2::XMLElement* startElem = lastMapAnnotationElem ? lastMapAnnotationElem->NextSiblingElement("MapAnnotation") : structuredAnnotationsElem->FirstChildElement("MapAnnotation");
-    tinyxml2::XMLElement* mapAnnotationElem = startElem;
-    // Search to end
-    for (; mapAnnotationElem != nullptr; mapAnnotationElem = mapAnnotationElem->NextSiblingElement("MapAnnotation")) {
-        const char* annotationID = mapAnnotationElem->Attribute("ID");
-        if (annotationID && strcmp(annotationID, refID) == 0) {
-            foundMapAnnotation = mapAnnotationElem;
-            break;
-        }
-    }
-    // If not found, wrap around and search from beginning up to lastMapAnnotationElem
-    if (!foundMapAnnotation && lastMapAnnotationElem) {
-        for (mapAnnotationElem = structuredAnnotationsElem->FirstChildElement("MapAnnotation");
-             mapAnnotationElem != lastMapAnnotationElem;
-             mapAnnotationElem = mapAnnotationElem->NextSiblingElement("MapAnnotation")) {
-            const char* annotationID = mapAnnotationElem->Attribute("ID");
-            if (annotationID && strcmp(annotationID, refID) == 0) {
-                foundMapAnnotation = mapAnnotationElem;
-                break;
+bool FileLoaderClass::_tryParseNewOMEFormat(tinyxml2::XMLElement* imageElem, tinyxml2::XMLElement* channelElem, 
+                                               std::int64_t& detectionIndex, std::string& stagePositionName, 
+                                               std::string& acqName, std::string& detectorName) {
+    tinyxml2::XMLElement* descElem = imageElem->FirstChildElement("Description");
+    if (descElem != nullptr && descElem->GetText() != nullptr) {
+        try {
+            nlohmann::json descJson = nlohmann::json::parse(descElem->GetText());
+            if (descJson.contains("DetectionIndex")) {
+                detectionIndex = descJson["DetectionIndex"].get<int64_t>();
+                
+                if (descJson.contains("StagePositionName")) {
+                    stagePositionName = descJson["StagePositionName"].get<std::string>();
+                } else if (imageElem->Attribute("Name") != nullptr) {
+                    stagePositionName = imageElem->Attribute("Name");
+                } else {
+                    stagePositionName = "";
+                }
+                
+                const char* strPtr = nullptr;
+                if (channelElem->QueryStringAttribute("Name", &strPtr) == tinyxml2::XML_SUCCESS) {
+                    std::string combinedName(strPtr);
+                    size_t pipePos = combinedName.find('|');
+                    if (pipePos != std::string::npos) {
+                        acqName = combinedName.substr(0, pipePos);
+                        detectorName = combinedName.substr(pipePos + 1);
+                        return true;
+                    }
+                }
             }
+        } catch (...) {
+            // Failed to parse JSON, meaning it's not the latest format
         }
     }
-    if (foundMapAnnotation) {
-        lastMapAnnotationElem = foundMapAnnotation;
-    }
-    return foundMapAnnotation;
+    return false;
 }
+
+void FileLoaderClass::_parseOldOMEFormat(tinyxml2::XMLElement* channelElem, 
+                                         std::int64_t& detectionIndex, std::string& stagePositionName, 
+                                         std::string& acqName, std::string& detectorName) {
+    const char* strPtr = nullptr;
+    if (channelElem->QueryStringAttribute("DetectorName", &strPtr) != tinyxml2::XML_SUCCESS) {
+        detectorName = "UnknownCam";
+    } else {
+        detectorName = strPtr;
+    }
+
+    if (channelElem->Attribute("AcquisitionName") != nullptr) {
+        if (channelElem->QueryStringAttribute("AcquisitionName", &strPtr) != tinyxml2::XML_SUCCESS) throw std::runtime_error("No acquisition name found");
+        acqName = strPtr;
+        if (channelElem->QueryAttribute("DetectionIndex", &detectionIndex) != tinyxml2::XML_SUCCESS) throw std::runtime_error("No detection index found");
+        if (channelElem->QueryStringAttribute("StagePositionName", &strPtr) != tinyxml2::XML_SUCCESS) throw std::runtime_error("No stage position name found");
+        stagePositionName = strPtr;
+    } else {
+        if (channelElem->QueryStringAttribute("Name", &strPtr) != tinyxml2::XML_SUCCESS) throw std::runtime_error("No acquisition name found");
+        acqName = strPtr;
+        stagePositionName = kNoStagePositionNameInformationStr;
+    }
+}
+

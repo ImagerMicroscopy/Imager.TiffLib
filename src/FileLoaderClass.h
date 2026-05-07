@@ -46,8 +46,12 @@ private:
 
     void _extractImagerMetaData(tinyxml2::XMLElement *omeElem);
 	
-	tinyxml2::XMLElement* _findMapAnnotationByID(tinyxml2::XMLElement* structuredAnnotationsElem, const char* refID,
-        										 tinyxml2::XMLElement*& lastMapAnnotationElem);
+	bool _tryParseNewOMEFormat(tinyxml2::XMLElement* imageElem, tinyxml2::XMLElement* channelElem, 
+                                  std::int64_t& detectionIndex, std::string& stagePositionName, 
+                                  std::string& acqName, std::string& detectorName);
+    void _parseOldOMEFormat(tinyxml2::XMLElement* channelElem, 
+                            std::int64_t& detectionIndex, std::string& stagePositionName, 
+                            std::string& acqName, std::string& detectorName);
 
     std::string _filePath;
     LNBTIFF::TIFFFile _tiffFile;
@@ -79,10 +83,10 @@ private:
 	std::map<AcqTypeAndDetName, std::vector<StagePosition>> _imagesStagePositions;
 	
 	/// @brief Cross-reference map: Look up the acq/det combination image index for a given detection index
-	std::map<AcqTypeAndDetName, std::map<int, int>> _indexWithinAcqDetToDetectionIndexMap;
+	std::map<AcqTypeAndDetName, std::map<int64_t, int>> _indexWithinAcqDetToDetectionIndexMap;
 	
 	/// @brief Cross-reference map: Look up the logical detection index using the index within a particular acq/det combination
-	std::map<AcqTypeAndDetName, std::map<int, int>> _detectionIndexToIndexWithinAcqDetMap;
+	std::map<AcqTypeAndDetName, std::map<int, int64_t>> _detectionIndexToIndexWithinAcqDetMap;
 
     /// @brief Maps Acquisition names to the sequence of logical detection indices that the microscope executed
 	std::map<AcquisitionName, std::vector<std::int64_t>> _imagesDetectionIndices;
