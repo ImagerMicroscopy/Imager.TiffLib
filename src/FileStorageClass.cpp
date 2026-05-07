@@ -54,17 +54,25 @@ void FileStorageClass::addNewImage(const AcqTypeAndDetName& acqTypeAndDetName, A
 	if (_finishedAddingImages) {
 		throw std::runtime_error("adding image but already finished");
 	}
+	int indexWithinAcqAndDet = _imageIndicesForChannel[acqTypeAndDetName].size();
+
 	_imageDimensions[acqTypeAndDetName].push_back(newImage.imageSize);
 	_imageIndicesForChannel[acqTypeAndDetName].push_back(_nImagesSeen);
 	_imagesTimepoints[acqTypeAndDetName].push_back(newImage.timePoint);
 	_imagesStagePositions[acqTypeAndDetName].push_back(newImage.stagePosition);
 	_imagesDetectionIndices[acqTypeAndDetName.first].push_back(newImage.detectionIndex);
+	_detectionIndicesForChannel[acqTypeAndDetName].push_back(newImage.detectionIndex);
+	
+	_indexWithinAcqDetToDetectionIndexMap[acqTypeAndDetName][newImage.detectionIndex] = indexWithinAcqAndDet;
+	_detectionIndexToIndexWithinAcqDetMap[acqTypeAndDetName][indexWithinAcqAndDet] = newImage.detectionIndex;
+
 	if (_imagesStagePositionNames.size() < newImage.detectionIndex + 1) {
-		_imagesStagePositionNames.emplace_back(newImage.stagePositionName);
+		_imagesStagePositionNames.resize(newImage.detectionIndex + 1);
 	}
+	_imagesStagePositionNames.at(newImage.detectionIndex) = newImage.stagePositionName;
+
 	_imagesAcqTypesAndDetNames.push_back(acqTypeAndDetName);
 
-	int indexWithinAcqAndDet = _imageIndicesForChannel.at(acqTypeAndDetName).size() - 1;
 	_queueAsyncImageWrite(acqTypeAndDetName, indexWithinAcqAndDet, newImage);
 	_nImagesSeen += 1;
 }
@@ -106,11 +114,11 @@ double FileStorageClass::getTimePoint(const AcqTypeAndDetName& acqTypeAndDetName
 }
 
 std::int64_t FileStorageClass::getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const {
-	return _imageIdxDetIdxMapForChannel.at(acqTypeAndDetName).at(detectionIndex);
+	return _indexWithinAcqDetToDetectionIndexMap.at(acqTypeAndDetName).at(detectionIndex);
 }
 
 std::int64_t  FileStorageClass::getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const {
-	return _detIdxImageIdxMapForChannel.at(acqTypeAndDetName).at(imageIndex);
+	return _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
 }
 
 const std::vector<int>& FileStorageClass::getDetectionIndicesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const {
@@ -123,7 +131,7 @@ std::int64_t FileStorageClass::getNumberOfDetections() const {
 }
 
 std::int64_t FileStorageClass::getDetectionIndex(const AcqTypeAndDetName &acqTypeAndDetName, const int imageIndex) const {
-	return _imagesDetectionIndices.at(acqTypeAndDetName.first).at(imageIndex);
+	return _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
 }
 
 const std::vector<std::string> & FileStorageClass::getStagePositionNames() const {
@@ -173,7 +181,7 @@ AcquiredImage FileStorageClass::_derivedGetImage(const AcqTypeAndDetName& acqTyp
 
     std::pair<int, int> imageSize = _imageDimensions.at(acqTypeAndDetName).at(imageIndex);
     size_t nPixels = imageSize.first * imageSize.second;
-	std::int64_t detectionIndex = _imagesDetectionIndices.at(acqTypeAndDetName.first).at(imageIndex);
+	std::int64_t detectionIndex = _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
 
 	AcquiredImage image({}, LNBTIFF::Mono16, imageSize, _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex),
 			            _imagesStagePositions.at(acqTypeAndDetName).at(imageIndex), detectionIndex,
@@ -240,6 +248,31 @@ void FileStorageClass::_asyncWorker() {
     }
 }
 
+/**
+ * @brief Generates the OME-XML metadata payload formatted per the "Imager protocol".
+ *
+ * The output corresponds to the standard 2016-06 OME-XML schema, but critically relies on
+ * the `StructuredAnnotations/MapAnnotation` capability to encode protocol-specific structures:
+ *
+ *  - Global Imager Program & Decisions: Stored in a single `<MapAnnotation ID="Annotation:ImagerMetadata">`.
+ *    Inside the `<Value>` element, two key-value pairs (`<M>`) encode the full logical scope:
+ *      * `<M K="ImagerProgram">` : The serialized JSON schema defining acquisition macros.
+ *      * `<M K="SmartProgramDecisions">` : A JSON object containing all dynamically resolved choices.
+ *
+ *  - Image-specific MapAnnotations: The `<MapAnnotation ID="Annotation:ImageXMetadata">` blocks correlate 
+ *    1:1 dynamically with linear IFDs (`<Image ID="Image:X">`). They contain the required keys:
+ *      * `AcquisitionName` : The phase inside the protocol.
+ *      * `DetectorName`    : Hardware device logic.
+ *      * `DetectionIndex`  : Monotonically increasing ID identifying the true logical step/timepoint
+ *                            which groups physical multi-channel captures together.
+ *      * `StagePositionName`: Physical alias mapped directly from `DetectionIndex`.
+ *
+ *  - Base Image Blocks: Each channel capture forms a standalone `<Image>` with a `DeltaT` mapped internally, 
+ *    spatial stages bound to `<Plane>`, and `<AnnotationRef>` linking back to both the global
+ *    `ImagerMetadata` map and their localized `ImageXMetadata`.
+ *
+ * @return A std::string containing the fully compliant and populated OME-XML tree.
+ */
 std::string FileStorageClass::_generateOMEXML() const {
     tinyxml2::XMLDocument xmlDoc;
     tinyxml2::XMLElement* omeElem = xmlDoc.NewElement("OME");
@@ -286,9 +319,9 @@ std::string FileStorageClass::_generateOMEXML() const {
 	for (const auto& id : _imageDimensions) {
 		tempNextIndices[id.first] = 0;
 	}
+
 	std::map<AcquisitionName, int64_t> next_ind;
-	for (const auto [key, value] : _imagesDetectionIndices)
-	{
+	for (const auto [key, value] : _imagesDetectionIndices) {
 		next_ind[key] = 0;
 	}
 	

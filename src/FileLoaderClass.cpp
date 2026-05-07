@@ -65,14 +65,14 @@ std::int64_t FileLoaderClass::getNumberOfDetections() const {
 }
 
 std::int64_t FileLoaderClass::getDetectionIndex(const AcqTypeAndDetName &acqTypeAndDetName, const int imageIndex) const {
-	return _imagesDetectionIndices.at(acqTypeAndDetName.first).at(imageIndex);
+	return _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
 }
 
 std::int64_t FileLoaderClass::getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const {
-    return _imageIdxDetIdxMapForChannel.at(acqTypeAndDetName).at(detectionIndex);
+    return _indexWithinAcqDetToDetectionIndexMap.at(acqTypeAndDetName).at(detectionIndex);
 }
 std::int64_t FileLoaderClass::getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const {
-    return _detIdxImageIdxMapForChannel.at(acqTypeAndDetName).at(imageIndex);
+    return _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
 }
 
 
@@ -139,7 +139,7 @@ void FileLoaderClass::_parseOMEXML() {
 
     tinyxml2::XMLElement* imageElem = omeElem->FirstChildElement("Image");
     if (imageElem == nullptr) throw std::runtime_error("No Image child element found");
-    for (int imageIdx = 0; imageElem != nullptr; imageElem = imageElem->NextSiblingElement(), imageIdx += 1) {
+    for (int imageIdx = 0; imageElem != nullptr; imageElem = imageElem->NextSiblingElement("Image"), imageIdx += 1) {
         tinyxml2::XMLElement* pixelsElem = imageElem->FirstChildElement("Pixels");
         if (pixelsElem == nullptr) throw std::runtime_error("No Pixels child element found");
         tinyxml2::XMLElement* planeElem = pixelsElem->FirstChildElement("Plane");
@@ -255,12 +255,15 @@ void FileLoaderClass::_parseOMEXML() {
         if (haveDetectionIdxAndStagePositionName) {
             _imagesDetectionIndices[acqName].push_back(detectionIndex);
             _detectionIndicesForChannel[acqTypeAndDetName].push_back(detectionIndex);
-            _imageIdxDetIdxMapForChannel[acqTypeAndDetName][detectionIndex] = imageIdx;
-            _detIdxImageIdxMapForChannel[acqTypeAndDetName][imageIdx] = detectionIndex;
+            _indexWithinAcqDetToDetectionIndexMap[acqTypeAndDetName][detectionIndex] = imageIdx;
+            _detectionIndexToIndexWithinAcqDetMap[acqTypeAndDetName][imageIdx] = detectionIndex;
             if (detectionIndex>_maxdetectionIdx){ 
                 _maxdetectionIdx = detectionIndex;
             }
-            _imagesStagePositionNamesAtDetectionIndices.push_back(stagePositionName);
+            if (_imagesStagePositionNamesAtDetectionIndices.size() <= detectionIndex) {
+            	_imagesStagePositionNamesAtDetectionIndices.resize(detectionIndex + 1);
+            }
+            _imagesStagePositionNamesAtDetectionIndices[detectionIndex] = stagePositionName;
         }
         
     }
@@ -282,9 +285,12 @@ void FileLoaderClass::_parseOMEXML() {
 			if (expectedImageIndices.size() > nImagesInChannel) {
 				expectedImageIndices.resize(nImagesInChannel);
 			}
-			highestDetectionIndex = std::max(highestDetectionIndex, expectedImageIndices.at(expectedImageIndices.size() - 1));
+			if (!expectedImageIndices.empty()) {
+				highestDetectionIndex = std::max(highestDetectionIndex, expectedImageIndices.at(expectedImageIndices.size() - 1));
+			}
 		}
 		_imagesStagePositionNamesAtDetectionIndices.resize(highestDetectionIndex + 1);
+		_maxdetectionIdx = highestDetectionIndex;
 	}
 }
 
@@ -354,9 +360,10 @@ void FileLoaderClass::_extractImagerMetaData(tinyxml2::XMLElement *omeElem) {
         if (!foundImagerProgram) {
             throw std::runtime_error("No Imager program description found");
         }
-        if (!foundSmartDecision) {
-            throw std::runtime_error("No Smart program decisions found");
-        }
+        // older formats didn't have SmartProgramDecisions, so don't throw if not found
+        // if (!foundSmartDecision) {
+        //     throw std::runtime_error("No Smart program decisions found");
+        // }
 	}
 
 	_imagerProgramDescription = imagerProgramDescription;
