@@ -357,7 +357,8 @@ std::string FileStorageClass::_generateOMEXML() const {
         tinyxml2::XMLElement* channelElem = xmlDoc.NewElement("Channel");
         pixelsElem->InsertEndChild(channelElem);
         channelElem->SetAttribute("ID", channelID.c_str());
-        std::string combinedName = std::format("{}|{}", acqTypeAndDetName.first, acqTypeAndDetName.second);
+        nlohmann::json nameJson = {acqTypeAndDetName.first, acqTypeAndDetName.second};
+        std::string combinedName = nameJson.dump();
         channelElem->SetAttribute("Name", combinedName.c_str());
 
         tinyxml2::XMLElement* tiffDataElem = xmlDoc.NewElement("TiffData");

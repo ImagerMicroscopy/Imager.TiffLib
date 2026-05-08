@@ -2,6 +2,7 @@
 
 #include <format>
 #include "ImagerProgramInterpreter.h"
+#include "json.hpp"
 
 FileLoaderClass::FileLoaderClass(const std::string& filePath) :
     _filePath(filePath),
@@ -115,8 +116,6 @@ void FileLoaderClass::_parseOMEXML() {
         throw std::runtime_error("No Imager program description found");
     }
 
-    tinyxml2::XMLElement* structuredAnnotationsElem = omeElem->FirstChildElement("StructuredAnnotations");
-
     tinyxml2::XMLElement* imageElem = omeElem->FirstChildElement("Image");
     if (imageElem == nullptr) throw std::runtime_error("No Image child element found");
     for (int imageIdx = 0; imageElem != nullptr; imageElem = imageElem->NextSiblingElement("Image"), imageIdx += 1) {
@@ -209,13 +208,13 @@ void FileLoaderClass::_extractImagerMetaData(tinyxml2::XMLElement *omeElem) {
     std::string imagerProgramDescription;
 
     // check if the file uses the old (incorrect) encoding of the Imager program, or whether it's using the
-    // new, hopefully correct one
+    // new one
     tinyxml2::XMLElement* imagerAnnotationElem = omeElem->FirstChildElement("MapAnnotation");
     if (imagerAnnotationElem != nullptr) {
         // old encoding
         const char* elemID = nullptr;
         if ((elemID = imagerAnnotationElem->Attribute("ID")) == nullptr) throw std::runtime_error("Couldn't find MapAnnotation ID");
-        if (strcmp(elemID, "Annotation:ImagerMetadata") != 0) throw std::runtime_error("Couldn't find Imager metadata");
+        if (strcmp(elemID, "ImagerMetadata") != 0) throw std::runtime_error("Couldn't find Imager metadata");
 
         tinyxml2::XMLElement* imagerMetadataElem = imagerAnnotationElem->FirstChildElement("Value");
         if (imagerMetadataElem == nullptr) throw std::runtime_error("No Imager metadata child element");
@@ -301,11 +300,13 @@ bool FileLoaderClass::_tryParseNewOMEFormat(tinyxml2::XMLElement* imageElem, tin
                 const char* strPtr = nullptr;
                 if (channelElem->QueryStringAttribute("Name", &strPtr) == tinyxml2::XML_SUCCESS) {
                     std::string combinedName(strPtr);
-                    size_t pipePos = combinedName.find('|');
-                    if (pipePos != std::string::npos) {
-                        acqName = combinedName.substr(0, pipePos);
-                        detectorName = combinedName.substr(pipePos + 1);
+                    nlohmann::json nameJson = nlohmann::json::parse(combinedName);
+                    if (nameJson.is_array() && nameJson.size() == 2) {
+                        acqName = nameJson[0].get<std::string>();
+                        detectorName = nameJson[1].get<std::string>();
                         return true;
+                    } else {
+                        throw std::runtime_error("Can't parse acquisition and detector names");
                     }
                 }
             }
