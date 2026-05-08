@@ -55,7 +55,7 @@ template <typename T> waveHndl NumericVectorToWave(const std::vector<T>& vec) {
 
 std::string HandleToNativePath(Handle h);
 
-std::tuple<std::vector<std::uint16_t>, PixelType, std::pair<int, int>> ExtractImageDataFromWave(waveHndl w);
+std::tuple<std::vector<std::uint8_t>, LNBTIFF::PixelFormat, std::pair<int, int>> ExtractImageDataFromWave(waveHndl w);
 AcquiredImage ImageFromWave(waveHndl w, double timePoint, waveHndl stagePositionWave, int64_t detectionIndex, const std::string& stagePositionName);
 waveHndl FreeWaveFromImage(const AcquiredImage& image);
 

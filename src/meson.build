@@ -7,3 +7,8 @@ MIMSources = files(
     'StorageWrapperClass.cpp',
     'tinyxml2.cpp',
 )
+
+igor_sources = files(
+    'MeasurementImagesMain.cpp',
+    'IgorUtils.cpp',
+)

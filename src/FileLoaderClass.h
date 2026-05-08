@@ -55,7 +55,7 @@ private:
 
     std::string _filePath;
     LNBTIFF::TIFFFile _tiffFile;
-    std::uint64_t _nImagesTotal;
+    std::uint64_t _nImagesTotal = 0;
     std::vector<uint64_t> _ifdOffsets;
     tinyxml2::XMLDocument _omeDoc;
 

@@ -180,7 +180,7 @@ void FileLoaderClass::_parseOMEXML() {
             }
             _imagesStagePositionNamesAtDetectionIndices[detectionIndex] = stagePositionName;
         }
-        
+        _nImagesTotal += 1;
     }
 
     if (_imagesDetectionIndices.empty()) {

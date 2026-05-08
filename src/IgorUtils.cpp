@@ -68,7 +68,7 @@ std::string HandleToNativePath(Handle h) {
     return std::string(buf);
 }
 
-std::tuple<std::vector<std::uint16_t>, PixelType, std::pair<int, int>> ExtractImageDataFromWave(waveHndl w) {
+std::tuple<std::vector<std::uint8_t>, LNBTIFF::PixelFormat, std::pair<int, int>> ExtractImageDataFromWave(waveHndl w) {
 	if ((WaveType(w) != (NT_I16 | NT_UNSIGNED)) && (WaveType(w) != NT_FP64)) {
 		throw std::runtime_error("unsupported image number type");
 	}
@@ -86,23 +86,23 @@ std::tuple<std::vector<std::uint16_t>, PixelType, std::pair<int, int>> ExtractIm
 		throw std::runtime_error("3d waves must have exactly one plane");
 	}
 
-	PixelType pixelType;
+	LNBTIFF::PixelFormat pixelFormat;
 	size_t nBytes;
 	if (WaveType(w) == (NT_I16 | NT_UNSIGNED)) {
-		pixelType = kInt16;
+		pixelFormat = LNBTIFF::Mono16;
 		nBytes = dimensionSizes[0] * dimensionSizes[1] * sizeof(std::uint16_t);
 	} else if (WaveType(w) == NT_FP64) {
-		pixelType = kFP64;
+		pixelFormat = LNBTIFF::Float64;
 		nBytes = dimensionSizes[0] * dimensionSizes[1] * sizeof(double);
 	} else {
 		throw std::runtime_error("unknown pixel type");
 	}
 
 	std::pair<int, int> imageSize(dimensionSizes[0], dimensionSizes[1]);
-	std:uint16_t* waveData = (std::uint16_t*)(WaveData(w));
-	std::vector<std::uint16_t> imageData(waveData, waveData + nBytes / sizeof(std::uint16_t));
+	std::uint16_t* waveData = (std::uint16_t*)(WaveData(w));
+	std::vector<std::uint8_t> imageData(reinterpret_cast<std::uint8_t*>(waveData), reinterpret_cast<std::uint8_t*>(waveData) + nBytes);
 
-	return std::make_tuple(std::move(imageData), pixelType, imageSize);
+	return std::make_tuple(std::move(imageData), pixelFormat, imageSize);
 }
 
 AcquiredImage ImageFromWave(waveHndl w, double timePoint, waveHndl stagePositionWave, int64_t detectionIndex, const std::string& stagePositionName) {
@@ -120,12 +120,12 @@ AcquiredImage ImageFromWave(waveHndl w, double timePoint, waveHndl stagePosition
     }
     double* stagePosPtr = (double*)(WaveData(stagePositionWave));
     StagePosition stagePosition(stagePosPtr[0], stagePosPtr[1], stagePosPtr[2]);
-	PixelType pixelType;
-	std::vector<std::uint16_t> imageData;
+	LNBTIFF::PixelFormat pixelFormat;
+	std::vector<std::uint8_t> imageData;
 	std::pair<int, int> imageSize;
 
-	std::tie(imageData, pixelType, imageSize) = ExtractImageDataFromWave(w);
-	AcquiredImage acqImage(std::move(imageData), pixelType, imageSize, timePoint, stagePosition, detectionIndex, stagePositionName);
+	std::tie(imageData, pixelFormat, imageSize) = ExtractImageDataFromWave(w);
+	AcquiredImage acqImage(std::move(imageData), pixelFormat, imageSize, timePoint, stagePosition, detectionIndex, stagePositionName);
     return acqImage;
 }
 
@@ -134,9 +134,9 @@ waveHndl FreeWaveFromImage(const AcquiredImage& image) {
     waveHndl w;
     CountInt dimSizes[3] = { imageSize.first, imageSize.second, 0 };
 	int waveType = 0;
-	if (image.pixelType == kInt16) {
+	if (image.pixelFormat == LNBTIFF::Mono16) {
 		waveType = NT_I16 | NT_UNSIGNED;
-	} else if (image.pixelType == kFP64) {
+	} else if (image.pixelFormat == LNBTIFF::Float64) {
 		waveType = NT_FP64;
 	} else {
 		throw std::runtime_error("unknown pixel type when making wave");
@@ -145,6 +145,6 @@ waveHndl FreeWaveFromImage(const AcquiredImage& image) {
     if (err) {
         throw int(err);
     }
-    memcpy(WaveData(w), image.imageData.data(), image.imageData.size() * sizeof(std::uint16_t));
+    memcpy(WaveData(w), image.imageData.data(), image.imageData.size());
     return w;
 }
