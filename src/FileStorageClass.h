@@ -44,9 +44,7 @@ public:
 	const std::vector<std::string>& getStagePositionNames() const override;
 	std::string getStagePositionName(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
 	const std::vector<int>& getDetectionIndicesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const override;
-	std::int64_t getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const override;
-	std::int64_t getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
-
+	
 	void addNewImage(const AcqTypeAndDetName& acqTypeAndDetName, AcquiredImage& newImage);
 	void addNewSmartProgramDecision(const std::string& decision);
 	void finishedAddingImages();

@@ -1,0 +1,2 @@
+option('build_igor_plugin', type : 'boolean', value : false,
+       description : 'Build Igor Pro XOP plugin alongside the DLL')

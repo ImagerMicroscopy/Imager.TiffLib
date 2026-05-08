@@ -4,9 +4,9 @@
 #include <string>
 #include <cassert>
 #include <cmath>
+#include <functional>
 #include <map>
 #include <mutex>
-#include <functional>
 #include <stdexcept>
 
 #include "XOPStandardHeaders.h"
@@ -482,6 +482,56 @@ IMSGetDetectionIndex(IMSGetDetectionIndexParams* p) {
 }
 
 #pragma pack(2)		// All structures passed to Igor are two-byte aligned.
+struct IMSGetImageIndexParams {
+	double detectionIndex;
+	Handle detectorName;
+	Handle acqTypeName;
+	double storerID;
+	UserFunctionThreadInfoPtr tp; // Pointer to Igor private data
+	double result;
+};
+typedef struct IMSGetImageIndexParams IMSGetImageIndexParams;
+#pragma pack()		// Reset structure alignment to default.
+
+extern "C" int
+IMSGetImageIndex(IMSGetImageIndexParams* p) {
+	Finally fin([=]() {
+		WMDisposeHandle(p->detectorName);
+		WMDisposeHandle(p->acqTypeName);
+	});
+	p->result = -1.0;
+	
+	return HandleExceptions([=]() {
+		if (p->acqTypeName == nullptr) {
+			throw int(EXPECTED_STRING);
+		}
+		if (p->detectorName == nullptr) {
+			throw int(EXPECTED_STRING);
+		}
+		AcqTypeAndDetName acqTypeAndDetName(HandleToString(p->acqTypeName), HandleToString(p->detectorName));
+		std::shared_ptr<StorageWrapperClass> storer = gLoaderStorerSaver.get(p->storerID);
+
+		std::vector<int> detectionIndices = storer->getDetectionIndicesForChannel(acqTypeAndDetName);
+
+		// find the first image index within the channel for which the detection index >= target
+		auto it = std::lower_bound(detectionIndices.begin(), detectionIndices.end(), (int)p->detectionIndex);
+		if (it == detectionIndices.end()) {
+			// target is greater than all detection indices for this channel, return the last image index
+			p->result = detectionIndices.size() - 1;
+
+		} else if (*it == (int)p->detectionIndex) {
+			// exact match found
+			p->result = std::distance(detectionIndices.begin(), it);
+
+		} else {
+			// *it > detectionIndex. Return the image index just before it.
+			// this may be -1 if the target detection index is smaller than the first image's detection index.
+			p->result = std::distance(detectionIndices.begin(), it) - 1;
+		}
+	});
+}
+
+#pragma pack(2)		// All structures passed to Igor are two-byte aligned.
 struct IMSGetStagePositionNamesParams {
 	double storerID;
 	UserFunctionThreadInfoPtr tp; // Pointer to Igor private data
@@ -879,52 +929,55 @@ RegisterFunction() {
     	case 8:
     		return (XOPIORecResult)IMSGetDetectionIndex;
     		break;
-    	case 9:
+        case 9:
+            return (XOPIORecResult)IMSGetImageIndex;
+            break;
+    	case 10:
     		return (XOPIORecResult)IMSGetStagePositionNames;
     		break;
-    	case 10:
+    	case 11:
     		return (XOPIORecResult)IMSGetStagePositionName;
     		break;
-    	case 11:
+    	case 12:
     		return (XOPIORecResult)IMSGetStorageLocation;
     		break;
-    	case 12:
+    	case 13:
     		return (XOPIORecResult)IMSGetImagerProgram;
     		break;
-    	case 13:
+    	case 14:
     		return (XOPIORecResult)IMSGetAcquisitionTypeNames;
     		break;
-    	case 14:
+    	case 15:
     		return (XOPIORecResult)IMSGetDetectorNames;
     		break;
-    	case 15:
+    	case 16:
     		return (XOPIORecResult)IMSGetNumberOfStoredImages;
     		break;
-		case 16:
+		case 17:
 			return (XOPIORecResult)IMSGetSmartProgramDecisions;
 			break;
-    	case 17:
+    	case 18:
     		return (XOPIORecResult)IMSClose;
     		break;
-    	case 18:
+    	case 19:
     		return (XOPIORecResult)IMSNewBasicStorage;
     		break;
-    	case 19:
+    	case 20:
     		return (XOPIORecResult)IMSAddNewBasicImage;
     		break;
-    	case 20:
+    	case 21:
     		return (XOPIORecResult)IMSCloseBasicStorage;
     		break;
-    	case 21:
+    	case 22:
     		return (XOPIORecResult)IMSNewBasicLoader;
     		break;
-    	case 22:
+    	case 23:
     		return (XOPIORecResult)IMSGetNumberOfStoredImagesBasic;
     		break;
-    	case 23:
+    	case 24:
     		return (XOPIORecResult)IMSGetBasicImage;
     		break;
-    	case 24:
+    	case 25:
     		return (XOPIORecResult)IMCloseBasicLoader;
     		break;
         default:

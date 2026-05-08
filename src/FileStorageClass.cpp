@@ -109,19 +109,6 @@ double FileStorageClass::getTimePoint(const AcqTypeAndDetName& acqTypeAndDetName
     return _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex);
 }
 
-std::int64_t FileStorageClass::getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const {
-    const auto& indices = _detectionIndicesForChannel.at(acqTypeAndDetName);
-    auto it = std::find(indices.begin(), indices.end(), detectionIndex);
-    if (it != indices.end()) {
-        return std::distance(indices.begin(), it);
-    }
-    throw std::out_of_range("Detection index not found in this channel");
-}
-
-std::int64_t  FileStorageClass::getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const {
-    return _detectionIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
-}
-
 const std::vector<int>& FileStorageClass::getDetectionIndicesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const {
 
     return _detectionIndicesForChannel.at(acqTypeAndDetName);

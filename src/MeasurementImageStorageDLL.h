@@ -153,23 +153,6 @@ LIBSPEC int MISGetNumberOfImages(
     int* nImages);
 
 /**
- * @brief Gets the image index corresponding to a detection index.
- *
- * @param storerID Storage instance identifier.
- * @param acqTypeName Acquisition type name.
- * @param detectorName Detector name.
- * @param detectionIndex Detection index.
- * @param imageIdxPtr Output image index.
- * @return 0 on success, non-zero on error.
- */
-LIBSPEC int MISGetImageIndexAtDetectionIndex(
-    int64_t storerID,
-    char* acqTypeName,
-    char* detectorName,
-    int64_t detectionIndex,
-    int* imageIdxPtr);
-
-/**
  * @brief Retrieves image pixel data.
  *
  * @param storerID Storage instance identifier.
@@ -231,6 +214,23 @@ LIBSPEC int MISGetDetectionIndex(
     char* detectorName,
     int imageIdx,
     int64_t* detectionIndex);
+
+/**
+ * @brief Gets the image index corresponding to a detection index.
+ *
+ * @param storerID Storage instance identifier.
+ * @param acqTypeName Acquisition type name.
+ * @param detectorName Detector name.
+ * @param detectionIndex Detection index.
+ * @param imageIdxPtr Output image index.
+ * @return 0 on success, non-zero on error.
+ */
+LIBSPEC int MISGetImageIndex(
+    int64_t storerID,
+    char* acqTypeName,
+    char* detectorName,
+    int64_t detectionIndex,
+    int* imageIdxPtr);
 
 /**
  * @brief Retrieves the stage position name for an image.

@@ -60,20 +60,6 @@ std::int64_t FileLoaderClass::getDetectionIndex(const AcqTypeAndDetName &acqType
     return _detectionIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
 }
 
-std::int64_t FileLoaderClass::getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const {
-    const auto& indices = _detectionIndicesForChannel.at(acqTypeAndDetName);
-    auto it = std::find(indices.begin(), indices.end(), detectionIndex);
-    if (it != indices.end()) {
-        return std::distance(indices.begin(), it);
-    }
-    throw std::out_of_range("Detection index not found in this channel");
-}
-std::int64_t FileLoaderClass::getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const {
-    return _detectionIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
-}
-
-
-
 const std::vector<int>& FileLoaderClass::getDetectionIndicesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const {
     return _detectionIndicesForChannel.at(acqTypeAndDetName);
 }
@@ -94,7 +80,7 @@ const std::vector<std::string> & FileLoaderClass::getSmartProgramDecisions() con
 AcquiredImage FileLoaderClass::_derivedReadImage(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) {
     int linearIdx = _imageIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
     std::uint64_t imageLength, imageWidth, nBytesInImage;
-    int64_t detectionIndex = getDetectionIdxForImageIdxForChannel(acqTypeAndDetName, imageIndex);
+    int64_t detectionIndex = getDetectionIndex(acqTypeAndDetName, imageIndex);
     LNBTIFF::PixelFormat pixelFormat;
     _tiffFile.getImageDimensions(linearIdx, imageLength, imageWidth, pixelFormat, nBytesInImage);
     if ((pixelFormat != LNBTIFF::Mono16) && (pixelFormat != LNBTIFF::Float64)) {

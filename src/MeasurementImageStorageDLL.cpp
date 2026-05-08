@@ -154,42 +154,6 @@ int MISGetNumberOfImages(int64_t storerID, char* acqTypeName, char* detectorName
 	});
 }
 
-/**
- * Finds the image index with the largest detection index that is less than or equal to the target.
- * 
- * @param storerID Handle to the storage/loader instance
- * @param acqTypeName Name of the acquisition type (channel)
- * @param detectorName Name of the detector (camera)
- * @param detectionIndex Target detection index to search for
- * @param imageIdxPtr (output) Image index with detection index <= target, or -1 if none found
- * @return 0 on success, -1 on error
- * 
- * This function performs a binary search to efficiently find the image with the highest
- * detection index that does not exceed the target. If an exact match is found, returns
- * that image's index. If no exact match exists, returns the image with the largest
- * detection index that is still less than the target.
- * 
- * Returns -1 if:
- * - No images exist for the given acquisition/detector combination
- * - The target detection index is smaller than the first image's detection index
- * 
- * Note: Detection indices are assumed to be sorted in ascending order by image index.
- */
-int MISGetImageIndexAtDetectionIndex(int64_t storerID, char* acqTypeName, char* detectorName,
-	int64_t detectionIndex, int* imageIdxPtr) {
-	return HandleExceptions([&]() {
-		AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
-		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
-
-		int nImages = storer->getNumberOfStoredImages(acqTypeAndDetName);
-		std::vector<int> view = storer->getDetectionIndicesForChannel(acqTypeAndDetName);
-		auto it = std::ranges::lower_bound(view, detectionIndex);
-		int idx = std::distance(view.begin(), it);
-		*imageIdxPtr = storer->getImageIdxForDetectionIdxForChannel(acqTypeAndDetName, view[idx-1]);
-		});
-}
-
-
 std::vector<AcquiredImage> gImagesInFlight;
 std::mutex gImagesInFlightMutex;
 
@@ -363,6 +327,55 @@ int MISGetDetectionIndex(int64_t storerID, char *acqTypeName, char *detectorName
         std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
         *detectionIndex = storer->getDetectionIndex(acqTypeAndDetName, imageIdx);
     });
+}
+
+/**
+ * Finds the image index with the largest detection index that is less than or equal to the target.
+ * 
+ * @param storerID Handle to the storage/loader instance
+ * @param acqTypeName Name of the acquisition type (channel)
+ * @param detectorName Name of the detector (camera)
+ * @param detectionIndex Target detection index to search for
+ * @param imageIdxPtr (output) Image index with detection index <= target, or -1 if none found
+ * @return 0 on success, -1 on error
+ * 
+ * This function performs a binary search to efficiently find the image with the highest
+ * detection index that does not exceed the target. If an exact match is found, returns
+ * that image's index. If no exact match exists, returns the image with the largest
+ * detection index that is still less than the target.
+ * 
+ * Returns -1 if:
+ * - No images exist for the given acquisition/detector combination
+ * - The target detection index is smaller than the first image's detection index
+ * 
+ * Note: Detection indices are assumed to be sorted in ascending order by image index.
+ */
+int MISGetImageIndex(int64_t storerID, char* acqTypeName, char* detectorName,
+	int64_t detectionIndex, int* imageIdxPtr) {
+	return HandleExceptions([&]() {
+		AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
+		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
+
+		std::vector<int> detectionIndices = storer->getDetectionIndicesForChannel(acqTypeAndDetName);
+
+		// find the first image index within the channel for which the detection index >= target
+		auto it = std::lower_bound(detectionIndices.begin(), detectionIndices.end(), static_cast<int>(detectionIndex));
+		if (it == detectionIndices.end()) {
+			// target is greater than all detection indices for this channel, return the last image index (which may be -1
+			// if there are no images for this channel).
+			*imageIdxPtr = static_cast<int>(detectionIndices.size()) - 1;
+
+		} else if (*it == static_cast<int>(detectionIndex)) {
+			// exact match found
+			*imageIdxPtr = static_cast<int>(std::distance(detectionIndices.begin(), it));
+
+		} else {
+			// *it > detectionIndex. Return the image index just before it.
+			// this may be -1 if the target detection index is smaller than the first image's detection index.
+			int idx = static_cast<int>(std::distance(detectionIndices.begin(), it));
+			*imageIdxPtr = idx - 1;
+		}
+	});
 }
 
 /**

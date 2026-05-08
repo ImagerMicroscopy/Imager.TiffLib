@@ -30,8 +30,7 @@ public:
 	std::int64_t getNumberOfDetections() const override;
 	std::int64_t getDetectionIndex(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
 	const std::vector<int>& getDetectionIndicesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const override;
-	std::int64_t getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const override;
-	std::int64_t getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
+	
 	const std::vector<std::string>& getStagePositionNames() const override;
 	std::string getStagePositionName(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const override;
 
@@ -71,7 +70,7 @@ private:
 	/// @brief For each combination of acquisition type and detector name, we store
 	// a vector linking the image index within that channel to the IFD index in the TIFF file.
 	std::map<AcqTypeAndDetName, std::vector<int>> _imageIndicesForChannel;
-	
+
 	/// @brief The logical detection index for each image in a given channel.
 	std::map<AcqTypeAndDetName, std::vector<int>> _detectionIndicesForChannel;
 

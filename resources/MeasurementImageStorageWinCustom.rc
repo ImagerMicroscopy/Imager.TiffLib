@@ -103,6 +103,15 @@ BEGIN
     NT_FP64,                    // index within acq type
     0,							// NOTE: 0 required to terminate list of parameter types.
 
+    "IMSGetImageIndex\0",		// Function name.
+    F_UTIL | F_THREADSAFE | F_EXTERNAL,		// Function category,
+    NT_FP64,			        // Return value type.
+    NT_FP64,					// IMS ID
+    HSTRING_TYPE,               // acq type
+    HSTRING_TYPE,				// detector name
+    NT_FP64,                    // index within acq type
+    0,							// NOTE: 0 required to terminate list of parameter types.
+
     "IMSGetStagePositionNames\0",	// Function name.
     F_UTIL | F_THREADSAFE | F_EXTERNAL,		// Function category,
     WAVE_TYPE,			        // Return value type.
