@@ -77,28 +77,19 @@ private:
 	
 	/// @brief Global linear indices (IFDs) of images in the TIFF file, sorted per channel
 	std::map<AcqTypeAndDetName, std::vector<int>> _imageIndicesForChannel;
+
+	/// @brief Sequence of detection indices executed for a specific channel
+	std::map<AcqTypeAndDetName, std::vector<int>> _detectionIndicesForChannel;
 	
 	/// @brief Timestamps for each image relative to the start of the program, mapped by channel
 	std::map<AcqTypeAndDetName, std::vector<double>> _imagesTimepoints;
 	
 	/// @brief Physical XYZ stage coordinates for each image in micrometers, mapped by channel
 	std::map<AcqTypeAndDetName, std::vector<StagePosition>> _imagesStagePositions;
-	
-	/// @brief Maps Acquisition names to the sequence of logical detection indices that the microscope executed
-	std::map<AcquisitionName, std::vector<std::int64_t>> _imagesDetectionIndices;
-	
+
 	/// @brief List of stage position labels/names indexed directly by detection index
 	std::vector<std::string> _imagesStagePositionNames;
-	
-	/// @brief Sequence of detection indices executed for a specific channel
-	std::map<AcqTypeAndDetName, std::vector<int>> _detectionIndicesForChannel;
-	
-	/// @brief Cross-reference map: Look up the acq/det combination image index for a given detection index
-	std::map<AcqTypeAndDetName, std::map<int64_t, int>> _indexWithinAcqDetToDetectionIndexMap;
-	
-	/// @brief Cross-reference map: Look up the logical detection index using the index within a particular acq/det combination
-	std::map<AcqTypeAndDetName, std::map<int, int64_t>> _detectionIndexToIndexWithinAcqDetMap;
-	
+
 	/// @brief List of serialised JSON strings tracking dynamic or algorithmic decisions made during the program
 	std::vector<std::string> _smartProgramDecisions;
 

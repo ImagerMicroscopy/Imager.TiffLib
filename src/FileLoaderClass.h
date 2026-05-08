@@ -59,37 +59,27 @@ private:
     std::vector<uint64_t> _ifdOffsets;
     tinyxml2::XMLDocument _omeDoc;
 
-    // Member variables that deal with metadata generation
     /// @brief JSON object describing the measurement executed by the microscope
     std::string _imagerProgramDescription;
-    
     /// @brief All unique Acquisition types present in the data
     std::set<std::string> _acquisitionNames;
-    
     /// @brief All unique detector names present in the data
 	std::set<std::string> _detectorNames;
+	/// @brief List of serialised JSON strings tracking dynamic or algorithmic decisions made during the program
+	std::vector<std::string> _smartProgramDecisions;
 	
 	/// @brief For each combination of acquisition type and detector name, we store
-	// a vector linking the logical index within that combination to the IFD index in the TIFF file.
+	// a vector linking the image index within that channel to the IFD index in the TIFF file.
 	std::map<AcqTypeAndDetName, std::vector<int>> _imageIndicesForChannel;
 	
 	/// @brief The logical detection index for each image in a given channel.
 	std::map<AcqTypeAndDetName, std::vector<int>> _detectionIndicesForChannel;
-	
+
 	/// @brief Timestamps for each image relative to the start of the program, mapped by channel.
 	std::map<AcqTypeAndDetName, std::vector<double>> _imagesTimepoints;
-	
+
 	/// @brief Physical XYZ stage coordinates for each image in micrometers, mapped by channel.
 	std::map<AcqTypeAndDetName, std::vector<StagePosition>> _imagesStagePositions;
-	
-	/// @brief Cross-reference map: Look up the acq/det combination image index for a given detection index
-	std::map<AcqTypeAndDetName, std::map<int64_t, int>> _indexWithinAcqDetToDetectionIndexMap;
-	
-	/// @brief Cross-reference map: Look up the logical detection index using the index within a particular acq/det combination
-	std::map<AcqTypeAndDetName, std::map<int, int64_t>> _detectionIndexToIndexWithinAcqDetMap;
-
-    /// @brief Maps Acquisition names to the sequence of logical detection indices that the microscope executed
-	std::map<AcquisitionName, std::vector<std::int64_t>> _imagesDetectionIndices;
 	
 	/// @brief List of stage position labels/names indexed directly by detection index
 	std::vector<std::string> _imagesStagePositionNamesAtDetectionIndices;
@@ -97,8 +87,6 @@ private:
     /// @brief Maximum observed detection index, used to size global loops and queries
 	int64_t _maxdetectionIdx = 0;
 	
-	/// @brief List of serialised JSON strings tracking dynamic or algorithmic decisions made during the program
-	std::vector<std::string> _smartProgramDecisions;
 	// -----------------------------------
 };
 

@@ -60,11 +60,7 @@ void FileStorageClass::addNewImage(const AcqTypeAndDetName& acqTypeAndDetName, A
     _imageIndicesForChannel[acqTypeAndDetName].push_back(_nImagesSeen);
     _imagesTimepoints[acqTypeAndDetName].push_back(newImage.timePoint);
     _imagesStagePositions[acqTypeAndDetName].push_back(newImage.stagePosition);
-    _imagesDetectionIndices[acqTypeAndDetName.first].push_back(newImage.detectionIndex);
     _detectionIndicesForChannel[acqTypeAndDetName].push_back(newImage.detectionIndex);
-    
-    _indexWithinAcqDetToDetectionIndexMap[acqTypeAndDetName][newImage.detectionIndex] = indexWithinAcqAndDet;
-    _detectionIndexToIndexWithinAcqDetMap[acqTypeAndDetName][indexWithinAcqAndDet] = newImage.detectionIndex;
 
     if (_imagesStagePositionNames.size() < newImage.detectionIndex + 1) {
         _imagesStagePositionNames.resize(newImage.detectionIndex + 1);
@@ -114,11 +110,16 @@ double FileStorageClass::getTimePoint(const AcqTypeAndDetName& acqTypeAndDetName
 }
 
 std::int64_t FileStorageClass::getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const {
-    return _indexWithinAcqDetToDetectionIndexMap.at(acqTypeAndDetName).at(detectionIndex);
+    const auto& indices = _detectionIndicesForChannel.at(acqTypeAndDetName);
+    auto it = std::find(indices.begin(), indices.end(), detectionIndex);
+    if (it != indices.end()) {
+        return std::distance(indices.begin(), it);
+    }
+    throw std::out_of_range("Detection index not found in this channel");
 }
 
 std::int64_t  FileStorageClass::getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const {
-    return _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
+    return _detectionIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
 }
 
 const std::vector<int>& FileStorageClass::getDetectionIndicesForChannel(const AcqTypeAndDetName& acqTypeAndDetName) const {
@@ -131,7 +132,7 @@ std::int64_t FileStorageClass::getNumberOfDetections() const {
 }
 
 std::int64_t FileStorageClass::getDetectionIndex(const AcqTypeAndDetName &acqTypeAndDetName, const int imageIndex) const {
-    return _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
+    return _detectionIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
 }
 
 const std::vector<std::string> & FileStorageClass::getStagePositionNames() const {
@@ -180,7 +181,7 @@ AcquiredImage FileStorageClass::_derivedGetImage(const AcqTypeAndDetName& acqTyp
     }
 
     std::pair<int, int> imageSize = _imageDimensions.at(acqTypeAndDetName).at(imageIndex);
-    std::int64_t detectionIndex = _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
+    std::int64_t detectionIndex = _detectionIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
 
     AcquiredImage image({}, LNBTIFF::Mono16, imageSize, _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex),
                         _imagesStagePositions.at(acqTypeAndDetName).at(imageIndex), detectionIndex,
@@ -320,7 +321,7 @@ std::string FileStorageClass::_generateOMEXML() const {
     for (size_t i = 0; i < _imagesAcqTypesAndDetNames.size(); i += 1) {
         AcqTypeAndDetName acqTypeAndDetName = _imagesAcqTypesAndDetNames[i];
         int indexWithinAcqAndDet = nextIndices.at(acqTypeAndDetName);
-        int64_t detectionIndex = _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(indexWithinAcqAndDet);
+        int64_t detectionIndex = _detectionIndicesForChannel.at(acqTypeAndDetName).at(indexWithinAcqAndDet);
         std::string stagePositionName = _imagesStagePositionNames.at(detectionIndex);
 
         std::string imageID = std::format("Image:{}", i);

@@ -57,14 +57,19 @@ std::int64_t FileLoaderClass::getNumberOfDetections() const {
 }
 
 std::int64_t FileLoaderClass::getDetectionIndex(const AcqTypeAndDetName &acqTypeAndDetName, const int imageIndex) const {
-    return _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
+    return _detectionIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
 }
 
 std::int64_t FileLoaderClass::getImageIdxForDetectionIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int detectionIndex) const {
-    return _indexWithinAcqDetToDetectionIndexMap.at(acqTypeAndDetName).at(detectionIndex);
+    const auto& indices = _detectionIndicesForChannel.at(acqTypeAndDetName);
+    auto it = std::find(indices.begin(), indices.end(), detectionIndex);
+    if (it != indices.end()) {
+        return std::distance(indices.begin(), it);
+    }
+    throw std::out_of_range("Detection index not found in this channel");
 }
 std::int64_t FileLoaderClass::getDetectionIdxForImageIdxForChannel(const AcqTypeAndDetName& acqTypeAndDetName, const int imageIndex) const {
-    return _detectionIndexToIndexWithinAcqDetMap.at(acqTypeAndDetName).at(imageIndex);
+    return _detectionIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
 }
 
 
@@ -168,10 +173,7 @@ void FileLoaderClass::_parseOMEXML() {
         _imagesTimepoints[acqTypeAndDetName].push_back(t);
         _imagesStagePositions[acqTypeAndDetName].push_back(StagePosition(x, y, z));
         if (haveDetectionIdxAndStagePositionName) {
-            _imagesDetectionIndices[acqName].push_back(detectionIndex);
             _detectionIndicesForChannel[acqTypeAndDetName].push_back(detectionIndex);
-            _indexWithinAcqDetToDetectionIndexMap[acqTypeAndDetName][detectionIndex] = indexWithinAcqDet;
-            _detectionIndexToIndexWithinAcqDetMap[acqTypeAndDetName][indexWithinAcqDet] = detectionIndex;
             if (detectionIndex>_maxdetectionIdx){ 
                 _maxdetectionIdx = detectionIndex;
             }
@@ -183,20 +185,22 @@ void FileLoaderClass::_parseOMEXML() {
         _nImagesTotal += 1;
     }
 
-    if (_imagesDetectionIndices.empty()) {
+    if (_detectionIndicesForChannel.empty()) {
         // means this was an older file that did not include the detection indices and stage position names directly
         // get these by interpreting the program
         nlohmann::json programDescriptor = nlohmann::json::parse(_imagerProgramDescription);
         nlohmann::json program = programDescriptor["program"]["program"];
         std::shared_ptr<ProgramElement> parsedProgram = ParseImagerProgramElement(program);
-        CalculateDetectionIndicesAndStagePositionNames(parsedProgram, _imagesDetectionIndices, _imagesStagePositionNamesAtDetectionIndices);
+        
+        std::map<AcquisitionName, std::vector<std::int64_t>> imagesDetectionIndices;
+        CalculateDetectionIndicesAndStagePositionNames(parsedProgram, imagesDetectionIndices, _imagesStagePositionNamesAtDetectionIndices);
 
         // if the user aborted the measurement then there are fewer images in the file than would be expected based on the program
         std::int64_t highestDetectionIndex = -1;
         for (const auto& [acqAndDetNames, imageIndices] : _imageIndicesForChannel) {
             const std::string& acqName = acqAndDetNames.first;
             size_t nImagesInChannel = imageIndices.size();
-            std::vector<std::int64_t>& expectedImageIndices = _imagesDetectionIndices[acqName];
+            std::vector<std::int64_t>& expectedImageIndices = imagesDetectionIndices[acqName];
             if (expectedImageIndices.size() > nImagesInChannel) {
                 expectedImageIndices.resize(nImagesInChannel);
             }
@@ -204,13 +208,10 @@ void FileLoaderClass::_parseOMEXML() {
                 highestDetectionIndex = std::max(highestDetectionIndex, expectedImageIndices.at(expectedImageIndices.size() - 1));
             }
             
-            // Populate the cross-reference maps for old format files
+            // Populate the indices for old format files
             for (size_t i = 0; i < expectedImageIndices.size(); ++i) {
                 std::int64_t detIdx = expectedImageIndices[i];
-                int indexWithinAcqDet = static_cast<int>(i);
                 _detectionIndicesForChannel[acqAndDetNames].push_back(detIdx);
-                _indexWithinAcqDetToDetectionIndexMap[acqAndDetNames][detIdx] = indexWithinAcqDet;
-                _detectionIndexToIndexWithinAcqDetMap[acqAndDetNames][indexWithinAcqDet] = detIdx;
             }
         }
         _imagesStagePositionNamesAtDetectionIndices.resize(highestDetectionIndex + 1);
