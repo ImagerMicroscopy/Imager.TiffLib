@@ -777,10 +777,8 @@ IMSAddNewBasicImage(IMSAddNewBasicImageParams* p) {
 			throw int(EXPECTED_WAVE_REF);
 		}
 		std::shared_ptr<BasicTIFFWriter> storer = gBasicTIFFWriterSaver.get(p->storerID);
-		auto[imageData, pixelType, imageSize] = ExtractImageDataFromWave(p->imageWave);
-		std::uint16_t* dataAs16Ptr = reinterpret_cast<std::uint16_t*>(imageData.data());
-		std::vector<std::uint16_t> dataAs16(dataAs16Ptr, dataAs16Ptr + imageData.size() / sizeof(std::uint16_t));
-		storer->addNewImage(dataAs16, pixelType, imageSize);
+		auto[imageData, pixelFormat, imageSize] = ExtractImageDataFromWave(p->imageWave);
+		storer->addNewImage(imageData, pixelFormat, imageSize);
 		p->result = 0;
 	});
 }
@@ -812,7 +810,7 @@ typedef struct IMSNewBasicLoaderParams IMSNewBasicLoaderParams;
 #pragma pack()		// Reset structure alignment to default.
 
 extern "C" int
-IMSNewBasicLoader(IMSNewBasicStorageParams* p) {
+IMSNewBasicLoader(IMSNewBasicLoaderParams* p) {
 	Finally fin([=]() {
 		WMDisposeHandle(p->filePath);
 	});
@@ -860,9 +858,7 @@ IMSGetBasicImage(IMSGetBasicImageParams* p) {
 		std::shared_ptr<BasicTIFFReader> reader = gBasicTIFFReaderSaver.get(p->storerID);
 		BasicTIFFReader::ReadImage readImage = reader->readImage(p->imageIdx);
 
-		std::uint8_t* byteData = reinterpret_cast<std::uint8_t*>(readImage.data.data());
-		std::vector<std::uint8_t> imageData(byteData, byteData + (readImage.data.size() * sizeof(std::uint16_t)));
-		AcquiredImage acquiredImage(std::move(imageData), LNBTIFF::Mono16, readImage.size, -1.0, StagePosition(), -1, "");
+		AcquiredImage acquiredImage(std::move(readImage.data), readImage.pixelFormat, readImage.size, -1.0, StagePosition(), -1, "");
 		p->imageH = FreeWaveFromImage(acquiredImage);
 	});
 }
@@ -877,7 +873,7 @@ typedef struct IMCloseBasicLoaderParams IMCloseBasicLoaderParams;
 #pragma pack()		// Reset structure alignment to default.
 
 extern "C" int
-IMCloseBasicLoader(IMCloseBasicParams* p) {
+IMCloseBasicLoader(IMCloseBasicLoaderParams* p) {
 	return HandleExceptions([=]() {
 		gBasicTIFFReaderSaver.erase(p->storerID);
 		p->result = 0;

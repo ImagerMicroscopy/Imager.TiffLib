@@ -9,18 +9,18 @@ std::string HandleToString(Handle handle) {
     std::string convertedString;
 
     size_t stringLength = GetHandleSize(handle);
-	convertedString.resize(stringLength);
-	err = GetCStringFromHandle(handle, (char*)(convertedString.data()), stringLength);
-	if (err) throw err;
+    convertedString.resize(stringLength);
+    err = GetCStringFromHandle(handle, (char*)(convertedString.data()), stringLength);
+    if (err) throw err;
     return convertedString;
 }
 
 Handle StringToHandle(const std::string& str) {
-	Handle h = WMNewHandle(0);
-	if (h == nullptr) throw int(NOMEM);
-	int err = PutCStringInHandle(str.data(), h);
-	if (err) throw err;
-	return h;
+    Handle h = WMNewHandle(0);
+    if (h == nullptr) throw int(NOMEM);
+    int err = PutCStringInHandle(str.data(), h);
+    if (err) throw err;
+    return h;
 }
 
 std::vector<std::string> WaveToStringVector(waveHndl w) {
@@ -46,19 +46,19 @@ std::vector<std::string> WaveToStringVector(waveHndl w) {
 }
 
 waveHndl StringVectorToWave(const std::vector<std::string>& sv) {
-	waveHndl w;
-	CountInt dimSizes[MAX_DIMENSIONS + 1] = { 0 };
-	CountInt indices[MAX_DIMENSIONS] = { 0 };
-	dimSizes[ROWS] = sv.size();
-	int err = MDMakeWave(&w, "FREE", (DataFolderHandle)-1, dimSizes, TEXT_WAVE_TYPE, 1);
-	if (err) throw err;
-	for (size_t i = 0; i < sv.size(); i += 1) {
-		Handle h = StringToHandle(sv.at(i));
-		indices[0] = i;
-		err = MDSetTextWavePointValue(w, indices, h);
-		DisposeHandle(h);
-	}
-	return w;
+    waveHndl w;
+    CountInt dimSizes[MAX_DIMENSIONS + 1] = { 0 };
+    CountInt indices[MAX_DIMENSIONS] = { 0 };
+    dimSizes[ROWS] = sv.size();
+    int err = MDMakeWave(&w, "FREE", (DataFolderHandle)-1, dimSizes, TEXT_WAVE_TYPE, 1);
+    if (err) throw err;
+    for (size_t i = 0; i < sv.size(); i += 1) {
+        Handle h = StringToHandle(sv.at(i));
+        indices[0] = i;
+        err = MDSetTextWavePointValue(w, indices, h);
+        DisposeHandle(h);
+    }
+    return w;
 }
 
 std::string HandleToNativePath(Handle h) {
@@ -69,40 +69,44 @@ std::string HandleToNativePath(Handle h) {
 }
 
 std::tuple<std::vector<std::uint8_t>, LNBTIFF::PixelFormat, std::pair<int, int>> ExtractImageDataFromWave(waveHndl w) {
-	if ((WaveType(w) != (NT_I16 | NT_UNSIGNED)) && (WaveType(w) != NT_FP64)) {
-		throw std::runtime_error("unsupported image number type");
-	}
+    
+    int numDimensions;
+    CountInt dimensionSizes[MAX_DIMENSIONS + 1];
+    int err = MDGetWaveDimensions(w, &numDimensions, dimensionSizes);
+    if (err) {
+        throw int(err);
+    }
+    if ((numDimensions < 2) || (numDimensions > 3)) {
+        throw std::runtime_error("need 2D or 3D with one plane wave");
+    }
+    if ((numDimensions == 3) && (dimensionSizes[2] > 1)) {
+        throw std::runtime_error("3d waves must have exactly one plane");
+    }
 
-	int numDimensions;
-	CountInt dimensionSizes[MAX_DIMENSIONS + 1];
-	int err = MDGetWaveDimensions(w, &numDimensions, dimensionSizes);
-	if (err) {
-		throw int(err);
-	}
-	if ((numDimensions < 2) || (numDimensions > 3)) {
-		throw std::runtime_error("need 2D or 3D with one plane wave");
-	}
-	if ((numDimensions == 3) && (dimensionSizes[2] > 1)) {
-		throw std::runtime_error("3d waves must have exactly one plane");
-	}
+    LNBTIFF::PixelFormat pixelFormat;
+    size_t nBytes;
+    switch (WaveType(w)) {
+        case (NT_I8 | NT_UNSIGNED):
+            pixelFormat = LNBTIFF::Mono8;
+            nBytes = dimensionSizes[0] * dimensionSizes[1] * sizeof(std::uint8_t);
+            break;
+        case (NT_I16 | NT_UNSIGNED):
+            pixelFormat = LNBTIFF::Mono16;
+            nBytes = dimensionSizes[0] * dimensionSizes[1] * sizeof(std::uint16_t);
+            break;
+        case NT_FP64:
+            pixelFormat = LNBTIFF::Float64;
+            nBytes = dimensionSizes[0] * dimensionSizes[1] * sizeof(double);
+            break;
+        default:
+            throw std::runtime_error("unknown pixel type");
+    }
 
-	LNBTIFF::PixelFormat pixelFormat;
-	size_t nBytes;
-	if (WaveType(w) == (NT_I16 | NT_UNSIGNED)) {
-		pixelFormat = LNBTIFF::Mono16;
-		nBytes = dimensionSizes[0] * dimensionSizes[1] * sizeof(std::uint16_t);
-	} else if (WaveType(w) == NT_FP64) {
-		pixelFormat = LNBTIFF::Float64;
-		nBytes = dimensionSizes[0] * dimensionSizes[1] * sizeof(double);
-	} else {
-		throw std::runtime_error("unknown pixel type");
-	}
+    std::pair<int, int> imageSize(dimensionSizes[0], dimensionSizes[1]);
+    std::uint8_t* waveData = (std::uint8_t*)(WaveData(w));
+    std::vector<std::uint8_t> imageData(waveData, waveData + nBytes);
 
-	std::pair<int, int> imageSize(dimensionSizes[0], dimensionSizes[1]);
-	std::uint16_t* waveData = (std::uint16_t*)(WaveData(w));
-	std::vector<std::uint8_t> imageData(reinterpret_cast<std::uint8_t*>(waveData), reinterpret_cast<std::uint8_t*>(waveData) + nBytes);
-
-	return std::make_tuple(std::move(imageData), pixelFormat, imageSize);
+    return std::make_tuple(std::move(imageData), pixelFormat, imageSize);
 }
 
 AcquiredImage ImageFromWave(waveHndl w, double timePoint, waveHndl stagePositionWave, int64_t detectionIndex, const std::string& stagePositionName) {
@@ -120,12 +124,12 @@ AcquiredImage ImageFromWave(waveHndl w, double timePoint, waveHndl stagePosition
     }
     double* stagePosPtr = (double*)(WaveData(stagePositionWave));
     StagePosition stagePosition(stagePosPtr[0], stagePosPtr[1], stagePosPtr[2]);
-	LNBTIFF::PixelFormat pixelFormat;
-	std::vector<std::uint8_t> imageData;
-	std::pair<int, int> imageSize;
+    LNBTIFF::PixelFormat pixelFormat;
+    std::vector<std::uint8_t> imageData;
+    std::pair<int, int> imageSize;
 
-	std::tie(imageData, pixelFormat, imageSize) = ExtractImageDataFromWave(w);
-	AcquiredImage acqImage(std::move(imageData), pixelFormat, imageSize, timePoint, stagePosition, detectionIndex, stagePositionName);
+    std::tie(imageData, pixelFormat, imageSize) = ExtractImageDataFromWave(w);
+    AcquiredImage acqImage(std::move(imageData), pixelFormat, imageSize, timePoint, stagePosition, detectionIndex, stagePositionName);
     return acqImage;
 }
 
@@ -133,14 +137,18 @@ waveHndl FreeWaveFromImage(const AcquiredImage& image) {
     std::pair<int, int> imageSize = image.imageSize;
     waveHndl w;
     CountInt dimSizes[3] = { imageSize.first, imageSize.second, 0 };
-	int waveType = 0;
-	if (image.pixelFormat == LNBTIFF::Mono16) {
-		waveType = NT_I16 | NT_UNSIGNED;
-	} else if (image.pixelFormat == LNBTIFF::Float64) {
-		waveType = NT_FP64;
-	} else {
-		throw std::runtime_error("unknown pixel type when making wave");
-	}
+    int waveType = 0;
+    switch (image.pixelFormat) {
+        case LNBTIFF::Mono8:
+            waveType = NT_I8 | NT_UNSIGNED;
+            break;
+        case LNBTIFF::Mono16:
+            waveType = NT_I16 | NT_UNSIGNED;
+            break;
+        case LNBTIFF::Float64:
+            waveType = NT_FP64;
+            break;
+    }
     int err = MDMakeWave(&w, "dummy", (DataFolderHandle)-1, dimSizes, waveType, 1);
     if (err) {
         throw int(err);

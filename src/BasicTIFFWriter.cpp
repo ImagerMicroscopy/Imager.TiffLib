@@ -8,16 +8,9 @@ BasicTIFFWriter::~BasicTIFFWriter() {
 	finalize();
 }
 
-void BasicTIFFWriter::addNewImage(const std::vector<std::uint16_t>& image, const LNBTIFF::PixelFormat pixelType,
+void BasicTIFFWriter::addNewImage(const std::vector<std::uint8_t>& image, const LNBTIFF::PixelFormat pixelFormat,
 								  const std::pair<int, int>& size) {
-	if (pixelType != LNBTIFF::Mono16) {
-		throw std::runtime_error("only Mono16 supported in BasicTIFFWriter for now");
-	}
-
-	std::vector<std::uint8_t> imageData(image.size() * sizeof(std::uint16_t));
-	memcpy(imageData.data(), image.data(), imageData.size());
-
-	_tiffWriter.writeImage(imageData, pixelType, size);
+	_tiffWriter.writeImage(image, pixelFormat, size);
 }
 
 void BasicTIFFWriter::finalize() {
@@ -42,15 +35,11 @@ BasicTIFFReader::ReadImage BasicTIFFReader::readImage(size_t imageIdx) {
     std::uint64_t imageLength, imageWidth, nBytesInImage;
 	LNBTIFF::PixelFormat pixelFormat;
 	_tiffFile.getImageDimensions(imageIdx, imageLength, imageWidth, pixelFormat, nBytesInImage);
-	if (pixelFormat != LNBTIFF::Mono16) {
-		throw std::runtime_error("Not a 16-bit image");
-	}
-	size_t nPixels = nBytesInImage / sizeof(std::uint16_t);
 
 	ReadImage readImage;
 	readImage.size = {imageWidth, imageLength};
-	readImage.data.resize(nPixels);
-	_tiffFile.loadImageData(imageIdx, reinterpret_cast<std::uint8_t*>(readImage.data.data()), readImage.data.size() * sizeof(std::uint16_t));
+	readImage.data.resize(nBytesInImage);
+	_tiffFile.loadImageData(imageIdx, readImage.data.data(), readImage.data.size());
 
 	return readImage;
 }
