@@ -28,6 +28,19 @@
 extern "C" {
 #endif
 
+#define MIS_API_VERSION 1
+
+#define MIS_PIXELFORMAT_MONO8 2
+#define MIS_PIXELFORMAT_MONO16 0
+#define MIS_PIXELFORMAT_FLOAT64 1
+
+/** @brief Returns the API version. 
+ * 
+ * Provided so the caller can check if the API version aligns with their expectation.
+*/
+
+LIBSPEC int32_t MISAPIVersion();
+
 /**
  * @brief Opens an existing Measurement Image Storage file.
  *
@@ -44,7 +57,7 @@ LIBSPEC int64_t MISOpenFile(const char* outputFilePath);
  * @return A storer ID on success, or a negative value on error.
  */
 LIBSPEC int64_t MISNewStorage(const char* outputFilePath,
-                             const char* measurementDescriptor);
+                              const char* measurementDescriptor);
 
 /**
  * @brief Closes an open storage instance.
@@ -66,6 +79,7 @@ LIBSPEC int MISClose(int64_t storerID);
  * @param stageZ Stage Z position.
  * @param detectionIndex Detection index.
  * @param stagePositionName Name of the stage position.
+ * @param pixelFormat Pixel format of the image data.
  * @param nRows Number of image rows.
  * @param nCols Number of image columns.
  * @param data Pointer to image pixel data (row-major).
@@ -81,6 +95,7 @@ LIBSPEC int MISAddNewImage(
     double stageZ,
     std::int64_t detectionIndex,
     char* stagePositionName,
+    int pixelFormat,
     int nRows,
     int nCols,
     uint16_t* data);
@@ -217,6 +232,11 @@ LIBSPEC int MISGetDetectionIndex(
 
 /**
  * @brief Gets the image index corresponding to a detection index.
+ * 
+ * 'Corresponding' means that it returns the index of the latest image that was acquired
+ * at or before this detection index. In other words, it is the most recent available image
+ * at the time this detection index occurred. The index '-1' will be returned if no image
+ * in this channel had been acquired by the time this detection index occurred.
  *
  * @param storerID Storage instance identifier.
  * @param acqTypeName Acquisition type name.

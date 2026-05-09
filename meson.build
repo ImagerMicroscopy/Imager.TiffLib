@@ -19,6 +19,15 @@ if host_machine.system() != 'windows' and cc.has_argument('-fvisibility=hidden')
   cpp_args_common += ['-fvisibility=hidden']
 endif
 
+# Causes compiler to report an error if a switch statement
+# does not cover all cases for an enum type and does not provide a default.
+cpp = meson.get_compiler('cpp')
+if cpp.get_id() == 'msvc'
+    add_project_arguments('/we4062', language: 'cpp')
+else
+    add_project_arguments('-Werror=switch', language: 'cpp')
+endif
+
 # Always build the standalone DLL
 library('MeasurementImageStorageDLL',
   MIMSources, 'src/MeasurementImageStorageDLL.cpp',

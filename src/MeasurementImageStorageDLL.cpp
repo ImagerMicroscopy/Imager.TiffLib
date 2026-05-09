@@ -10,6 +10,8 @@
 #include <ranges>
 #include <stdexcept>
 
+#include "TIFFUtils.h"
+
 #include "FileStorageClass.h"
 #include "FileLoaderClass.h"
 #include "MiscUtils.h"
@@ -53,28 +55,33 @@ int HandleExceptions(std::function<void()> f) {
 	return 0;
 }
 
-int64_t MISOpenFile(const char* outputFilePath) {
-	try {
-		std::shared_ptr<StorageWrapperClass> loader(new FileLoaderClass(outputFilePath));
-		std::uint64_t id = InsertNewStorer(loader);
-		return id;
-	}
-	catch (...)
-	{
-		return -1;
+LNBTIFF::PixelFormat PixelFormatFromInt(int pixelFormatInt) {
+	switch (pixelFormatInt) {
+		case MIS_PIXELFORMAT_MONO8: return LNBTIFF::Mono8;
+		case MIS_PIXELFORMAT_MONO16: return LNBTIFF::Mono16;
+		case MIS_PIXELFORMAT_FLOAT64: return LNBTIFF::Float64;
+		default: throw std::runtime_error("unknown pixel format");
 	}
 }
 
+int32_t MISAPIVersion() {
+    return MIS_API_VERSION;
+}
+
+int64_t MISOpenFile(const char* outputFilePath) {
+    return HandleExceptions([&]() {
+        std::shared_ptr<StorageWrapperClass> loader(new FileLoaderClass(outputFilePath));
+        std::uint64_t id = InsertNewStorer(loader);
+        return id;
+    });
+}
+
 int64_t MISNewStorage(const char* outputFilePath, const char* measurementDescriptor) {
-	try {
-		std::shared_ptr<FileStorageClass> storer(new FileStorageClass(outputFilePath, measurementDescriptor));
-		std::uint64_t id = InsertNewStorer(storer);
-		return id;
-	}
-	catch (...)
-	{
-		return -1;
-	}
+    return HandleExceptions([&]() {
+        std::shared_ptr<FileStorageClass> storer(new FileStorageClass(outputFilePath, measurementDescriptor));
+        std::uint64_t id = InsertNewStorer(storer);
+        return id;
+    });
 }
 
 int MISClose(int64_t storerID) {
@@ -107,18 +114,20 @@ int MISClose(int64_t storerID) {
  * not on loader instances created with MISOpenFile.
  */
 int MISAddNewImage(int64_t storerID, char* acqTypeName, char* detectorName, double timePoint, double stageX, double stageY, double stageZ,
-				   std::int64_t detectionIndex, char* stagePositionName, int nRows, int nCols, uint16_t* data) {
+				   std::int64_t detectionIndex, char* stagePositionName, int pixelFormat, int nRows, int nCols, uint16_t* data) {
 	return HandleExceptions([&]() {
 		std::shared_ptr<StorageWrapperClass> storerW = GetStorer(storerID);
 		FileStorageClass* storer = dynamic_cast<FileStorageClass*>(storerW.get());
 		if (storer == nullptr) throw std::runtime_error("Adding image to non-output storer");
 		AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
-
-		std::vector<std::uint8_t> imageData(nRows * nCols * sizeof(std::uint16_t));
+		LNBTIFF::PixelFormat pf = PixelFormatFromInt(pixelFormat);
+		
+		size_t nBytesPerPixel = LNBTIFF::NBytesPerPixelForPixelFormat(pf);
+		std::vector<std::uint8_t> imageData(nRows * nCols * nBytesPerPixel);
 		memcpy(imageData.data(), data, imageData.size());
 		StagePosition stagePosition = std::make_tuple(stageX, stageY, stageZ);
 
-		AcquiredImage acqImage(std::move(imageData), LNBTIFF::Mono16, {nRows, nCols}, timePoint, stagePosition, detectionIndex, stagePositionName);
+		AcquiredImage acqImage(std::move(imageData), pf, {nRows, nCols}, timePoint, stagePosition, detectionIndex, stagePositionName);
 		storer->addNewImage(acqTypeAndDetName, acqImage);
 	});
 }
