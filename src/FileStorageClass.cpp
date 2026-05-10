@@ -56,7 +56,14 @@ void FileStorageClass::addNewImage(const AcqTypeAndDetName& acqTypeAndDetName, A
     }
     int indexWithinAcqAndDet = _imageIndicesForChannel[acqTypeAndDetName].size();
 
-    _imageDimensions[acqTypeAndDetName].push_back(newImage.imageSize);
+    if (_imageDimensions.contains(acqTypeAndDetName)) {
+        std::pair<int, int> existingDimensions = _imageDimensions.at(acqTypeAndDetName);
+        if (existingDimensions.first != newImage.imageSize.first || existingDimensions.second != newImage.imageSize.second) {
+            throw std::runtime_error(std::format("image dimensions for channel {} don't match previous images for that channel", acqTypeAndDetName.first + "/" + acqTypeAndDetName.second));
+        }
+    }
+    _imageDimensions[acqTypeAndDetName] = newImage.imageSize;
+    
     _imageIndicesForChannel[acqTypeAndDetName].push_back(_nImagesSeen);
     _imagesTimepoints[acqTypeAndDetName].push_back(newImage.timePoint);
     _imagesStagePositions[acqTypeAndDetName].push_back(newImage.stagePosition);
@@ -173,7 +180,7 @@ AcquiredImage FileStorageClass::_derivedGetImage(const AcqTypeAndDetName& acqTyp
         return image;
     }
 
-    std::pair<int, int> imageSize = _imageDimensions.at(acqTypeAndDetName).at(imageIndex);
+    std::pair<int, int> imageSize = _imageDimensions.at(acqTypeAndDetName);
     std::int64_t detectionIndex = _detectionIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
 
     AcquiredImage image({}, LNBTIFF::Mono16, imageSize, _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex),
@@ -343,8 +350,8 @@ std::string FileStorageClass::_generateOMEXML() const {
         imageElem->InsertEndChild(pixelsElem);
         pixelsElem->SetAttribute("ID", pixelsID.c_str());
         pixelsElem->SetAttribute("DimensionOrder", "XYZCT");
-        pixelsElem->SetAttribute("SizeX", _imageDimensions.at(acqTypeAndDetName).at(indexWithinAcqAndDet).first);
-        pixelsElem->SetAttribute("SizeY", _imageDimensions.at(acqTypeAndDetName).at(indexWithinAcqAndDet).second);
+        pixelsElem->SetAttribute("SizeX", _imageDimensions.at(acqTypeAndDetName).first);
+        pixelsElem->SetAttribute("SizeY", _imageDimensions.at(acqTypeAndDetName).second);
         pixelsElem->SetAttribute("SizeZ", 1);
         pixelsElem->SetAttribute("SizeT", 1);
         pixelsElem->SetAttribute("SizeC", 1);

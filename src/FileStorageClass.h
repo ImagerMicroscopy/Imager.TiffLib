@@ -70,8 +70,8 @@ private:
 	/// Used to map to the "TheC" indices in the OME-XML.
 	std::vector<AcqTypeAndDetName> _acqTypesAndDetNamesInOrderOfImageAddition;
 
-	/// @brief Dimensions (width, height) of each image, mapped by channel (Acquisition + Detector name)
-	std::map<AcqTypeAndDetName, std::vector<std::pair<int, int>>> _imageDimensions;
+	/// @brief Dimensions (width, height) of each channel image
+	std::map<AcqTypeAndDetName, std::pair<int, int>> _imageDimensions;
 	
 	/// @brief Global linear indices (IFDs) of images in the TIFF file, sorted per channel
 	std::map<AcqTypeAndDetName, std::vector<int>> _imageIndicesForChannel;
