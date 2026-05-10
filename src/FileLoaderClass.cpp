@@ -301,9 +301,9 @@ bool FileLoaderClass::_tryParseNewOMEFormat(tinyxml2::XMLElement* imageElem, tin
                 if (channelElem->QueryStringAttribute("Name", &strPtr) == tinyxml2::XML_SUCCESS) {
                     std::string combinedName(strPtr);
                     nlohmann::json nameJson = nlohmann::json::parse(combinedName);
-                    if (nameJson.is_array() && nameJson.size() == 2) {
-                        acqName = nameJson[0].get<std::string>();
-                        detectorName = nameJson[1].get<std::string>();
+                    if (nameJson.contains("AcquisitionName") && nameJson.contains("DetectorName")) {
+                        acqName = nameJson["AcquisitionName"].get<std::string>();
+                        detectorName = nameJson["DetectorName"].get<std::string>();
                         return true;
                     } else {
                         throw std::runtime_error("Can't parse acquisition and detector names");
