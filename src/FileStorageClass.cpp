@@ -69,6 +69,12 @@ void FileStorageClass::addNewImage(const AcqTypeAndDetName& acqTypeAndDetName, A
 
     _imagesAcqTypesAndDetNames.push_back(acqTypeAndDetName);
 
+    auto it = std::find(_acqTypesAndDetNamesInOrderOfImageAddition.begin(),
+                        _acqTypesAndDetNamesInOrderOfImageAddition.end(), acqTypeAndDetName);
+    if (it == _acqTypesAndDetNamesInOrderOfImageAddition.end()) {
+        _acqTypesAndDetNamesInOrderOfImageAddition.push_back(acqTypeAndDetName);
+    }
+
     _queueAsyncImageWrite(acqTypeAndDetName, indexWithinAcqAndDet, newImage);
     _nImagesSeen += 1;
 }
@@ -311,6 +317,13 @@ std::string FileStorageClass::_generateOMEXML() const {
         int64_t detectionIndex = _detectionIndicesForChannel.at(acqTypeAndDetName).at(indexWithinAcqAndDet);
         std::string stagePositionName = _imagesStagePositionNames.at(detectionIndex);
 
+        auto channelIt = std::find(_acqTypesAndDetNamesInOrderOfImageAddition.begin(),
+                                   _acqTypesAndDetNamesInOrderOfImageAddition.end(), acqTypeAndDetName);
+        if (channelIt == _acqTypesAndDetNamesInOrderOfImageAddition.end()) {
+            throw std::logic_error("internal error: channel not found in ordered list");
+        }
+        size_t channelIndex = std::distance(_acqTypesAndDetNamesInOrderOfImageAddition.begin(), channelIt);
+
         std::string imageID = std::format("Image:{}", i);
         std::string annotationRefToImageID = std::format("{}:0:0:0", imageID);
         tinyxml2::XMLElement* imageElem = xmlDoc.NewElement("Image");
@@ -349,7 +362,7 @@ std::string FileStorageClass::_generateOMEXML() const {
         planeElem->SetAttribute("PositionXUnit", "µm");
         planeElem->SetAttribute("PositionYUnit", "µm");
         planeElem->SetAttribute("PositionZUnit", "µm");
-        planeElem->SetAttribute("TheC", 0);
+        planeElem->SetAttribute("TheC", (int)channelIndex);
         planeElem->SetAttribute("TheT", 0);
         planeElem->SetAttribute("TheZ", 0);
 

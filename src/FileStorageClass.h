@@ -66,9 +66,9 @@ private:
 	size_t _nImagesSeen;
 	bool _finishedAddingImages;
 
-	// --- Metadata tracking variables ---
-	// These variables store and synchronize the metadata across all written images.
-	// They map individual acquisitions and detectors to their corresponding sequential or spatial metadata.
+	/// @brief List of all acquisition/detector combinations in the order they were first seen during image addition.
+	/// Used to map to the "TheC" indices in the OME-XML.
+	std::vector<AcqTypeAndDetName> _acqTypesAndDetNamesInOrderOfImageAddition;
 
 	/// @brief Dimensions (width, height) of each image, mapped by channel (Acquisition + Detector name)
 	std::map<AcqTypeAndDetName, std::vector<std::pair<int, int>>> _imageDimensions;
