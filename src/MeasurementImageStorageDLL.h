@@ -98,7 +98,7 @@ LIBSPEC int MISAddNewImage(
     int pixelFormat,
     int nRows,
     int nCols,
-    uint16_t* data);
+    uint8_t* data);
 
 /**
  * @brief Adds an encoded smart program decision to the storage.
@@ -186,7 +186,7 @@ LIBSPEC int MISGetImage(
     char* acqTypeName,
     char* detectorName,
     int imageIdx,
-    uint16_t** dataLocationPtr,
+    uint8_t** dataLocationPtr,
     int* nRows,
     int* nCols);
 
@@ -196,7 +196,7 @@ LIBSPEC int MISGetImage(
  * @param dataPtr Pointer to image data.
  * @return 0 on success, non-zero on error.
  */
-LIBSPEC int MISReleaseImageData(uint16_t* dataPtr);
+LIBSPEC int MISReleaseImageData(uint8_t* dataPtr);
 
 /**
  * @brief Retrieves the acquisition time point for an image.

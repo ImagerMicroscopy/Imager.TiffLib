@@ -23,45 +23,45 @@ std::int64_t gStorerID = 0;
 std::mutex gStorerMutex;
 
 void ClearStorers() {
-	gStorerMap.clear();
+    gStorerMap.clear();
 }
 
 int64_t InsertNewStorer(std::shared_ptr<StorageWrapperClass> storer) {
-	std::lock_guard<std::mutex> lock(gStorerMutex);
-	std::uint64_t id = gStorerID++;
-	gStorerMap.insert(std::make_pair(id, storer));
-	return id;
+    std::lock_guard<std::mutex> lock(gStorerMutex);
+    std::uint64_t id = gStorerID++;
+    gStorerMap.insert(std::make_pair(id, storer));
+    return id;
 }
 
 std::shared_ptr<StorageWrapperClass> GetStorer(uint64_t storerID) {
-	std::lock_guard<std::mutex> lock(gStorerMutex);
-	return (gStorerMap.at(storerID));
+    std::lock_guard<std::mutex> lock(gStorerMutex);
+    return (gStorerMap.at(storerID));
 }
 
 void DeleteStorer(uint64_t storerID) {
-	std::lock_guard<std::mutex> lock(gStorerMutex);
-	if (gStorerMap.count(storerID) > 0) {
-		gStorerMap.erase(storerID);
-	} else {
-		throw std::runtime_error("no such storer ID");
-	}
+    std::lock_guard<std::mutex> lock(gStorerMutex);
+    if (gStorerMap.count(storerID) > 0) {
+        gStorerMap.erase(storerID);
+    } else {
+        throw std::runtime_error("no such storer ID");
+    }
 }
 
 int HandleExceptions(std::function<void()> f) {
-	try { f(); }
-	catch (...) {
-		return -1;
-	}
-	return 0;
+    try { f(); }
+    catch (...) {
+        return -1;
+    }
+    return 0;
 }
 
 LNBTIFF::PixelFormat PixelFormatFromInt(int pixelFormatInt) {
-	switch (pixelFormatInt) {
-		case MIS_PIXELFORMAT_MONO8: return LNBTIFF::Mono8;
-		case MIS_PIXELFORMAT_MONO16: return LNBTIFF::Mono16;
-		case MIS_PIXELFORMAT_FLOAT64: return LNBTIFF::Float64;
-		default: throw std::runtime_error("unknown pixel format");
-	}
+    switch (pixelFormatInt) {
+        case MIS_PIXELFORMAT_MONO8: return LNBTIFF::Mono8;
+        case MIS_PIXELFORMAT_MONO16: return LNBTIFF::Mono16;
+        case MIS_PIXELFORMAT_FLOAT64: return LNBTIFF::Float64;
+        default: throw std::runtime_error("unknown pixel format");
+    }
 }
 
 int32_t MISAPIVersion() {
@@ -85,9 +85,9 @@ int64_t MISNewStorage(const char* outputFilePath, const char* measurementDescrip
 }
 
 int MISClose(int64_t storerID) {
-	return HandleExceptions([&]() {
-		DeleteStorer(storerID);
-	});
+    return HandleExceptions([&]() {
+        DeleteStorer(storerID);
+    });
 }
 
 /**
@@ -114,22 +114,22 @@ int MISClose(int64_t storerID) {
  * not on loader instances created with MISOpenFile.
  */
 int MISAddNewImage(int64_t storerID, char* acqTypeName, char* detectorName, double timePoint, double stageX, double stageY, double stageZ,
-				   std::int64_t detectionIndex, char* stagePositionName, int pixelFormat, int nRows, int nCols, uint16_t* data) {
-	return HandleExceptions([&]() {
-		std::shared_ptr<StorageWrapperClass> storerW = GetStorer(storerID);
-		FileStorageClass* storer = dynamic_cast<FileStorageClass*>(storerW.get());
-		if (storer == nullptr) throw std::runtime_error("Adding image to non-output storer");
-		AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
-		LNBTIFF::PixelFormat pf = PixelFormatFromInt(pixelFormat);
-		
-		size_t nBytesPerPixel = LNBTIFF::NBytesPerPixelForPixelFormat(pf);
-		std::vector<std::uint8_t> imageData(nRows * nCols * nBytesPerPixel);
-		memcpy(imageData.data(), data, imageData.size());
-		StagePosition stagePosition = std::make_tuple(stageX, stageY, stageZ);
+                   std::int64_t detectionIndex, char* stagePositionName, int pixelFormat, int nRows, int nCols, uint8_t* data) {
+    return HandleExceptions([&]() {
+        std::shared_ptr<StorageWrapperClass> storerW = GetStorer(storerID);
+        FileStorageClass* storer = dynamic_cast<FileStorageClass*>(storerW.get());
+        if (storer == nullptr) throw std::runtime_error("Adding image to non-output storer");
+        AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
+        LNBTIFF::PixelFormat pf = PixelFormatFromInt(pixelFormat);
+        
+        size_t nBytesPerPixel = LNBTIFF::NBytesPerPixelForPixelFormat(pf);
+        std::vector<std::uint8_t> imageData(nRows * nCols * nBytesPerPixel);
+        memcpy(imageData.data(), data, imageData.size());
+        StagePosition stagePosition = std::make_tuple(stageX, stageY, stageZ);
 
-		AcquiredImage acqImage(std::move(imageData), pf, {nRows, nCols}, timePoint, stagePosition, detectionIndex, stagePositionName);
-		storer->addNewImage(acqTypeAndDetName, acqImage);
-	});
+        AcquiredImage acqImage(std::move(imageData), pf, {nRows, nCols}, timePoint, stagePosition, detectionIndex, stagePositionName);
+        storer->addNewImage(acqTypeAndDetName, acqImage);
+    });
 }
 
 int MISAddSmartProgramDecision(int64_t storerID, char* encodedSmartProgramDecision) {
@@ -156,11 +156,11 @@ int MISAddSmartProgramDecision(int64_t storerID, char* encodedSmartProgramDecisi
  * individual images.
  */
 int MISGetNumberOfImages(int64_t storerID, char* acqTypeName, char* detectorName, int* nImages) {
-	return HandleExceptions([&]() {
-		AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
-		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
-		*nImages = storer->getNumberOfStoredImages(acqTypeAndDetName);
-	});
+    return HandleExceptions([&]() {
+        AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
+        std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
+        *nImages = storer->getNumberOfStoredImages(acqTypeAndDetName);
+    });
 }
 
 std::vector<AcquiredImage> gImagesInFlight;
@@ -185,7 +185,7 @@ std::mutex gImagesInFlightMutex;
  * Note: Multiple images can be retrieved simultaneously; each must be released
  * individually with its corresponding data pointer.
  */
-int MISGetImage(int64_t storerID, char* acqTypeName, char* detectorName, int imageIdx, uint16_t** dataLocationPtr, int* nRows, int* nCols) {
+int MISGetImage(int64_t storerID, char* acqTypeName, char* detectorName, int imageIdx, uint8_t** dataLocationPtr, int* nRows, int* nCols) {
     return HandleExceptions([&]() {
         AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
         std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
@@ -195,7 +195,7 @@ int MISGetImage(int64_t storerID, char* acqTypeName, char* detectorName, int ima
             std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
             gImagesInFlight.emplace_back(std::move(image));
             AcquiredImage& newImage = gImagesInFlight.at(gImagesInFlight.size() - 1);
-            *dataLocationPtr = reinterpret_cast<uint16_t*>(newImage.imageData.data());
+            *dataLocationPtr = newImage.imageData.data();
             *nRows = image.imageSize.first;
             *nCols = image.imageSize.second;
         }
@@ -212,17 +212,17 @@ int MISGetImage(int64_t storerID, char* acqTypeName, char* detectorName, int ima
  * MISGetImage() to prevent memory leaks. After calling this function,
  * the dataPtr becomes invalid and should not be used.
  */
-int MISReleaseImageData(uint16_t* dataPtr) {
-	return HandleExceptions([&]() {
-		std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
-		auto it = std::find_if(gImagesInFlight.begin(), gImagesInFlight.end(), [&](const AcquiredImage& im) -> bool {
-			return (im.imageData.data() == reinterpret_cast<uint8_t*>(dataPtr));
-		});
-		if (it == gImagesInFlight.end()) {
-			throw std::runtime_error("no such image in flight");
-		}
-		gImagesInFlight.erase(it);
-	});
+int MISReleaseImageData(uint8_t* dataPtr) {
+    return HandleExceptions([&]() {
+        std::lock_guard<std::mutex> lock(gImagesInFlightMutex);
+        auto it = std::find_if(gImagesInFlight.begin(), gImagesInFlight.end(), [&](const AcquiredImage& im) -> bool {
+            return (im.imageData.data() == dataPtr);
+        });
+        if (it == gImagesInFlight.end()) {
+            throw std::runtime_error("no such image in flight");
+        }
+        gImagesInFlight.erase(it);
+    });
 }
 
 /**
@@ -236,11 +236,11 @@ int MISReleaseImageData(uint16_t* dataPtr) {
  * @return 0 on success, -1 on error
  */
 int MISGetTimePoint(int64_t storerID, char* acqTypeName, char* detectorName, int imageIdx, double* timePoint) {
-	return HandleExceptions([&]() {
-		AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
-		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
-		*timePoint = storer->getTimePoint(acqTypeAndDetName, imageIdx);
-	});
+    return HandleExceptions([&]() {
+        AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
+        std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
+        *timePoint = storer->getTimePoint(acqTypeAndDetName, imageIdx);
+    });
 }
 
 /**
@@ -256,11 +256,11 @@ int MISGetTimePoint(int64_t storerID, char* acqTypeName, char* detectorName, int
  * @return 0 on success, -1 on error
  */
 int MISGetStagePosition(int64_t storerID, char* acqTypeName, char* detectorName, int imageIdx, double* stageX, double* stageY, double* stageZ) {
-	return HandleExceptions([&]() {
-		AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
-		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
-		std::tie(*stageX, *stageY, *stageZ) = storer->getStagePosition(acqTypeAndDetName, imageIdx);
-	});
+    return HandleExceptions([&]() {
+        AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
+        std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
+        std::tie(*stageX, *stageY, *stageZ) = storer->getStagePosition(acqTypeAndDetName, imageIdx);
+    });
 }
 
 /**
@@ -274,10 +274,10 @@ int MISGetStagePosition(int64_t storerID, char* acqTypeName, char* detectorName,
  * during the measurement, regardless of acquisition type or detector.
  */
 int MISGetNumberOfDetections(int64_t storerID, int64_t *numDetections) {
-	return HandleExceptions([&]() {
-		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
-		*numDetections = storer->getNumberOfDetections();
-	});
+    return HandleExceptions([&]() {
+        std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
+        *numDetections = storer->getNumberOfDetections();
+    });
 }
 
 /**
@@ -291,13 +291,13 @@ int MISGetNumberOfDetections(int64_t storerID, int64_t *numDetections) {
  * Note: Use MISFreeStringArray() to free the returned array.
  */
 int MISGetAcquisitionNames(int64_t storerID, char*** acqTypeNamesPtr, int* nAcqTypes) {
-	return HandleExceptions([&]() {
-		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
-		const std::vector<std::string> acqNames = storer->getAcquisitionNames();
-		char** names = AllocateStringVectorArray(acqNames);
-		*nAcqTypes = static_cast<int>(acqNames.size());
-		*acqTypeNamesPtr = names;
-	});
+    return HandleExceptions([&]() {
+        std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
+        const std::vector<std::string> acqNames = storer->getAcquisitionNames();
+        char** names = AllocateStringVectorArray(acqNames);
+        *nAcqTypes = static_cast<int>(acqNames.size());
+        *acqTypeNamesPtr = names;
+    });
 }
 
 /**
@@ -311,13 +311,13 @@ int MISGetAcquisitionNames(int64_t storerID, char*** acqTypeNamesPtr, int* nAcqT
  * Note: Use MISFreeStringArray() to free the returned array.
  */
 int MISGetDetectorNames(int64_t storerID, char*** detectorNamesPtr, int* nDetectors) {
-	return HandleExceptions([&]() {
-		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
-		const std::vector<std::string> detNames = storer->getDetectorNames();
-		char** names = AllocateStringVectorArray(detNames);
-		*nDetectors = static_cast<int>(detNames.size());
-		*detectorNamesPtr = names;
-	});
+    return HandleExceptions([&]() {
+        std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
+        const std::vector<std::string> detNames = storer->getDetectorNames();
+        char** names = AllocateStringVectorArray(detNames);
+        *nDetectors = static_cast<int>(detNames.size());
+        *detectorNamesPtr = names;
+    });
 }
 
 /**
@@ -360,31 +360,31 @@ int MISGetDetectionIndex(int64_t storerID, char *acqTypeName, char *detectorName
  * Note: Detection indices are assumed to be sorted in ascending order by image index.
  */
 int MISGetImageIndex(int64_t storerID, char* acqTypeName, char* detectorName,
-	int64_t detectionIndex, int* imageIdxPtr) {
-	return HandleExceptions([&]() {
-		AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
-		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
+    int64_t detectionIndex, int* imageIdxPtr) {
+    return HandleExceptions([&]() {
+        AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
+        std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
 
-		std::vector<int> detectionIndices = storer->getDetectionIndicesForChannel(acqTypeAndDetName);
+        std::vector<int> detectionIndices = storer->getDetectionIndicesForChannel(acqTypeAndDetName);
 
-		// find the first image index within the channel for which the detection index >= target
-		auto it = std::lower_bound(detectionIndices.begin(), detectionIndices.end(), static_cast<int>(detectionIndex));
-		if (it == detectionIndices.end()) {
-			// target is greater than all detection indices for this channel, return the last image index (which may be -1
-			// if there are no images for this channel).
-			*imageIdxPtr = static_cast<int>(detectionIndices.size()) - 1;
+        // find the first image index within the channel for which the detection index >= target
+        auto it = std::lower_bound(detectionIndices.begin(), detectionIndices.end(), static_cast<int>(detectionIndex));
+        if (it == detectionIndices.end()) {
+            // target is greater than all detection indices for this channel, return the last image index (which may be -1
+            // if there are no images for this channel).
+            *imageIdxPtr = static_cast<int>(detectionIndices.size()) - 1;
 
-		} else if (*it == static_cast<int>(detectionIndex)) {
-			// exact match found
-			*imageIdxPtr = static_cast<int>(std::distance(detectionIndices.begin(), it));
+        } else if (*it == static_cast<int>(detectionIndex)) {
+            // exact match found
+            *imageIdxPtr = static_cast<int>(std::distance(detectionIndices.begin(), it));
 
-		} else {
-			// *it > detectionIndex. Return the image index just before it.
-			// this may be -1 if the target detection index is smaller than the first image's detection index.
-			int idx = static_cast<int>(std::distance(detectionIndices.begin(), it));
-			*imageIdxPtr = idx - 1;
-		}
-	});
+        } else {
+            // *it > detectionIndex. Return the image index just before it.
+            // this may be -1 if the target detection index is smaller than the first image's detection index.
+            int idx = static_cast<int>(std::distance(detectionIndices.begin(), it));
+            *imageIdxPtr = idx - 1;
+        }
+    });
 }
 
 /**
@@ -426,25 +426,25 @@ std::vector<std::string> gImagerProgramsInFlight;
 std::mutex gImagerProgramsInFlightMutex;
 
 int MISGetImagerProgram(int64_t storerID, char** programDescriptionPtr) {
-	return HandleExceptions([&]() {
-		std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
-		std::lock_guard<std::mutex> lock(gImagerProgramsInFlightMutex);
-		gImagerProgramsInFlight.push_back(storer->getSerializedImagerProgram());
-		*programDescriptionPtr = const_cast<char*>(gImagerProgramsInFlight.at(gImagerProgramsInFlight.size() - 1).c_str());
-	});
+    return HandleExceptions([&]() {
+        std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
+        std::lock_guard<std::mutex> lock(gImagerProgramsInFlightMutex);
+        gImagerProgramsInFlight.push_back(storer->getSerializedImagerProgram());
+        *programDescriptionPtr = const_cast<char*>(gImagerProgramsInFlight.at(gImagerProgramsInFlight.size() - 1).c_str());
+    });
 }
 
 int MISFreeProgramDescription(char* programDescriptionPtr) {
-	return HandleExceptions([&]() {
-		std::lock_guard<std::mutex> lock(gImagerProgramsInFlightMutex);
-		auto it = std::find_if(gImagerProgramsInFlight.begin(), gImagerProgramsInFlight.end(), [&](const std::string& s) {
-			return (s.c_str() == programDescriptionPtr);
-		});
-		if (it == gImagerProgramsInFlight.end()) {
-			throw std::runtime_error("no program in flight");
-		}
-		gImagerProgramsInFlight.erase(it);
-	});
+    return HandleExceptions([&]() {
+        std::lock_guard<std::mutex> lock(gImagerProgramsInFlightMutex);
+        auto it = std::find_if(gImagerProgramsInFlight.begin(), gImagerProgramsInFlight.end(), [&](const std::string& s) {
+            return (s.c_str() == programDescriptionPtr);
+        });
+        if (it == gImagerProgramsInFlight.end()) {
+            throw std::runtime_error("no program in flight");
+        }
+        gImagerProgramsInFlight.erase(it);
+    });
 }
 
 /**
@@ -477,33 +477,33 @@ int MISGetSmartProgramDecisions(int64_t storerID, char*** encodedSmartProgramDec
         std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
         std::vector<std::string> decisions = storer->getSmartProgramDecisions();
         *encodedSmartProgramDecisionPtr = reinterpret_cast<char**>(AllocateStringVectorArray(decisions));
-		*numberOfDecisionsPtr = static_cast<int>(decisions.size());
-	});
+        *numberOfDecisionsPtr = static_cast<int>(decisions.size());
+    });
 }
 
 char** AllocateStringVectorArray(const std::vector<std::string>& strings) {
-	size_t n = strings.size();
-	if (strings.empty()) return nullptr;
+    size_t n = strings.size();
+    if (strings.empty()) return nullptr;
 
-	size_t nBytesForPointers = strings.size() * sizeof(char*);
-	size_t lengthOfAllStrings = 0;
-	for (const auto& s : strings) {
-		lengthOfAllStrings += s.size() + 1;
-	}
-	char* memoryBlock = new char[nBytesForPointers + lengthOfAllStrings];
-	char** stringPointers = reinterpret_cast<char**>(memoryBlock);
-	char* stringContentsPtr = memoryBlock + nBytesForPointers;
+    size_t nBytesForPointers = strings.size() * sizeof(char*);
+    size_t lengthOfAllStrings = 0;
+    for (const auto& s : strings) {
+        lengthOfAllStrings += s.size() + 1;
+    }
+    char* memoryBlock = new char[nBytesForPointers + lengthOfAllStrings];
+    char** stringPointers = reinterpret_cast<char**>(memoryBlock);
+    char* stringContentsPtr = memoryBlock + nBytesForPointers;
 
-	for (size_t i = 0; i < strings.size(); ++i) {
-		stringPointers[i] = stringContentsPtr;
-		strcpy(stringContentsPtr, strings[i].c_str());
-		stringContentsPtr += strings[i].size() + 1;
-	}
-	return reinterpret_cast<char**>(memoryBlock);
+    for (size_t i = 0; i < strings.size(); ++i) {
+        stringPointers[i] = stringContentsPtr;
+        strcpy(stringContentsPtr, strings[i].c_str());
+        stringContentsPtr += strings[i].size() + 1;
+    }
+    return reinterpret_cast<char**>(memoryBlock);
 }
 
 void MISFreeStringArray(char** array) {
-	if (array) {
-		delete[] array;
-	}
+    if (array) {
+        delete[] array;
+    }
 }
