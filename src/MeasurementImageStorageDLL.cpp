@@ -68,19 +68,19 @@ int32_t MISAPIVersion() {
     return MIS_API_VERSION;
 }
 
-int64_t MISOpenFile(const char* outputFilePath) {
+int MISOpenFile(const char* outputFilePath, int* storerId) {
     return HandleExceptions([&]() {
         std::shared_ptr<StorageWrapperClass> loader(new FileLoaderClass(outputFilePath));
         std::uint64_t id = InsertNewStorer(loader);
-        return id;
+        *storerId = static_cast<int>(id);
     });
 }
 
-int64_t MISNewStorage(const char* outputFilePath, const char* measurementDescriptor) {
+int MISNewStorage(const char* outputFilePath, const char* measurementDescriptor, int* storerId) {
     return HandleExceptions([&]() {
         std::shared_ptr<FileStorageClass> storer(new FileStorageClass(outputFilePath, measurementDescriptor));
         std::uint64_t id = InsertNewStorer(storer);
-        return id;
+        *storerId = static_cast<int>(id);
     });
 }
 

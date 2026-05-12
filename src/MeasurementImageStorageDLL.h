@@ -47,7 +47,7 @@ LIBSPEC int32_t MISAPIVersion();
  * @param outputFilePath Path to the existing storage file.
  * @return A storer ID on success, or a negative value on error.
  */
-LIBSPEC int64_t MISOpenFile(const char* outputFilePath);
+LIBSPEC int MISOpenFile(const char* outputFilePath, int* storerId);
 
 /**
  * @brief Creates a new Measurement Image Storage file.
@@ -56,8 +56,9 @@ LIBSPEC int64_t MISOpenFile(const char* outputFilePath);
  * @param measurementDescriptor Human-readable description of the measurement.
  * @return A storer ID on success, or a negative value on error.
  */
-LIBSPEC int64_t MISNewStorage(const char* outputFilePath,
-                              const char* measurementDescriptor);
+LIBSPEC int MISNewStorage(const char* outputFilePath,
+                              const char* measurementDescriptor,
+                              int* storerId);
 
 /**
  * @brief Closes an open storage instance.
