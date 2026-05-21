@@ -3,13 +3,14 @@
 
 #include "StorageWrapperClass.h"
 
+#include <atomic>
 #include <chrono>
+#include <deque>
 #include <fstream>
 #include <thread>
+#include <map>
 #include <memory>
 #include <mutex>
-#include <deque>
-#include <map>
 
 #include "ReaderWriterQueue/atomicops.h"
 #include "ReaderWriterQueue/readerwriterqueue.h"
@@ -66,6 +67,9 @@ private:
 	size_t _nImagesSeen;
 	bool _finishedAddingImages;
 
+	/// @brief Ordered list of channel identifiers mapping 1:1 with the global image stream sequence
+	std::vector<AcqTypeAndDetName> _imagesAcqTypesAndDetNames;
+
 	/// @brief List of all acquisition/detector combinations in the order they were first seen during image addition.
 	/// Used to map to the "TheC" indices in the OME-XML.
 	std::vector<AcqTypeAndDetName> _acqTypesAndDetNamesInOrderOfImageAddition;
@@ -91,8 +95,6 @@ private:
 	/// @brief List of serialised JSON strings tracking dynamic or algorithmic decisions made during the program
 	std::vector<std::string> _smartProgramDecisions;
 
-	/// @brief Ordered list of channel identifiers mapping 1:1 with the global image stream sequence
-	std::vector<AcqTypeAndDetName> _imagesAcqTypesAndDetNames;
 	// -----------------------------------
 
 	std::chrono::system_clock::time_point _initialTimePoint;
@@ -101,9 +103,8 @@ private:
     std::mutex _queueMutex;
 
     std::thread _asyncWorkerThread;
-    volatile bool _workerHasError;
+    std::atomic<bool> _workerHasError;
 	std::string _workerErrorMessage;
 };
 
 #endif
-

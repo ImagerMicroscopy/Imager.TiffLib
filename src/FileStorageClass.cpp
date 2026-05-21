@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <format>
+#include <set>
 
 #include "date.h"
 #include "json.hpp"
@@ -36,17 +37,23 @@ std::string FileStorageClass::getStorageLocation() const {
 
 const std::vector<std::string> FileStorageClass::getAcquisitionNames() const {
     std::vector<std::string> acqNames;
-    for (const AcqTypeAndDetName& n : _imagesAcqTypesAndDetNames) {
-        acqNames.push_back(n.first);
+    std::set<std::string> uniqueAcqNames;
+    for (auto it = _imageIndicesForChannel.cbegin(); it != _imageIndicesForChannel.cend(); it++) {
+         const AcqTypeAndDetName& n = it->first;
+         uniqueAcqNames.insert(n.first);
     }
+    acqNames.assign(uniqueAcqNames.begin(), uniqueAcqNames.end());
     return acqNames;
 }
 
 const std::vector<std::string> FileStorageClass::getDetectorNames() const {
     std::vector<std::string> detNames;
-    for (const AcqTypeAndDetName& n : _imagesAcqTypesAndDetNames) {
-        detNames.push_back(n.second);
+    std::set<std::string> uniqueDetNames;
+    for (auto it = _imageIndicesForChannel.cbegin(); it != _imageIndicesForChannel.cend(); it++) {
+        const AcqTypeAndDetName& n = it->first;
+        uniqueDetNames.insert(n.second);
     }
+    detNames.assign(uniqueDetNames.begin(), uniqueDetNames.end());
     return detNames;
 }
 
@@ -111,6 +118,9 @@ AcquiredImage FileStorageClass::getImage(const AcqTypeAndDetName& acqTypeAndDetN
 }
 
 int FileStorageClass::getNumberOfStoredImages(const AcqTypeAndDetName& acqTypeAndDetName) const {
+    if (_imageIndicesForChannel.count(acqTypeAndDetName) == 0) {
+        return 0;
+    }
     return _imageIndicesForChannel.at(acqTypeAndDetName).size();
 }
 
