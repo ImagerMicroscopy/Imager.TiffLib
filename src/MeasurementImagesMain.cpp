@@ -140,27 +140,6 @@ ExecuteIMSNewStorage(IMSNewStorageRuntimeParamsPtr p) {
     // Main parameters.
     return HandleExceptions([&]() {
         int err = 0;
-        std::vector<std::string> channelNames;
-        if (p->channelNamesEncountered) {
-            // Parameter: p->channelNames_channelNames (test for NULL handle before using)
-            if (p->channelNames_channelNames == nullptr) {
-                throw int(EXPECTED_WAVE_REF);
-            }
-            channelNames = WaveToStringVector(p->channelNames_channelNames);
-        } else {
-            throw int(EXPECTED_WAVE_REF);
-        }
-
-		std::vector<std::string> detectorNames;
-		if (p->detectorNamesEncountered) {
-			// Parameter: p->detectorNames_detectorNames (test for NULL handle before using)
-			if (p->detectorNames_detectorNames == nullptr) {
-				throw int(EXPECTED_WAVE_REF);
-			}
-			detectorNames = WaveToStringVector(p->detectorNames_detectorNames);
-		} else {
-			throw int(EXPECTED_WAVE_REF);
-		}
 
         std::string serializedProgram;
         if (p->serializedProgramEncountered) {
