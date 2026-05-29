@@ -1,6 +1,7 @@
 #ifndef MISCTYPES_H
 #define MISCTYPES_H
 
+#include <cstdint>
 #include <memory>
 #include <string>
 #include <tuple>

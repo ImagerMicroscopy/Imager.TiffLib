@@ -1,6 +1,6 @@
 [wrap-git]
 url = https://bitbucket.org/dedeckerlab/lnbtiff.git
-revision = d476ad6f22266233cafc97becd79b98231765dad
+revision = b2b9e910ba923dd2ca47fdfdbec12d3e62e24858
 depth = 1
 
 [provide]
