@@ -94,7 +94,7 @@ AcquiredImage FileLoaderClass::_derivedReadImage(const AcqTypeAndDetName& acqTyp
     StagePosition stagePosition = _imagesStagePositions.at(acqTypeAndDetName).at(imageIndex);
     std::string stagePositionName = _imagesStagePositionNamesAtDetectionIndices.at(detectionIndex);
 
-    std::pair<int, int> imageSize(imageWidth, imageLength);
+    std::pair<int, int> imageSize(imageLength, imageWidth);
     std::vector<std::uint8_t> imageData(nBytesInImage);
 
     _tiffFile.loadImageData(linearIdx, reinterpret_cast<std::uint8_t*>(imageData.data()), imageData.size());

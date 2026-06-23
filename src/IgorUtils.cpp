@@ -102,7 +102,7 @@ std::tuple<std::vector<std::uint8_t>, LNBTIFF::PixelFormat, std::pair<int, int>>
             throw std::runtime_error("unknown pixel type");
     }
 
-    std::pair<int, int> imageSize(dimensionSizes[0], dimensionSizes[1]);
+    std::pair<int, int> imageSize(dimensionSizes[1], dimensionSizes[0]);
     std::uint8_t* waveData = (std::uint8_t*)(WaveData(w));
     std::vector<std::uint8_t> imageData(waveData, waveData + nBytes);
 
@@ -136,7 +136,7 @@ AcquiredImage ImageFromWave(waveHndl w, double timePoint, waveHndl stagePosition
 waveHndl FreeWaveFromImage(const AcquiredImage& image) {
     std::pair<int, int> imageSize = image.imageSize;
     waveHndl w;
-    CountInt dimSizes[3] = { imageSize.first, imageSize.second, 0 };
+    CountInt dimSizes[3] = { imageSize.second, imageSize.first, 0 };
     int waveType = 0;
     switch (image.pixelFormat) {
         case LNBTIFF::Mono8:
