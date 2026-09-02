@@ -97,9 +97,9 @@ std::shared_ptr<ProgramElement> ParseImagerProgramElement(const nlohmann::json &
         }
         if ("relativestageloop" == elementType) {
             nlohmann::json params = json["params"];
-            nlohmann::json additionalplanesx = params["additionalplanesx"].get<size_t>();
-            nlohmann::json additionalplanesy = params["additionalplanesy"].get<size_t>();
-            nlohmann::json additionalplanesz = params["additionalplanesz"].get<size_t>();
+            nlohmann::json additionalplanesx = params["additionalplanesx"];
+            nlohmann::json additionalplanesy = params["additionalplanesy"];
+            nlohmann::json additionalplanesz = params["additionalplanesz"];
             size_t nNegX = additionalplanesx[0].get<size_t>();
             size_t nPosX = additionalplanesx[1].get<size_t>();
             size_t nNegY = additionalplanesy[0].get<size_t>();
