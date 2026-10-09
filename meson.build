@@ -29,11 +29,10 @@ else
 endif
 
 # Always build the standalone DLL
-library('MeasurementImageStorageDLL',
+library('MeasurementImageStorage',
   MIMSources, 'src/MeasurementImageStorageDLL.cpp',
   include_directories: [incDir],
   dependencies : [lnbtiff_dep],
-  name_suffix : 'dll',
   cpp_args : cpp_args_common,
   install : true)
 
