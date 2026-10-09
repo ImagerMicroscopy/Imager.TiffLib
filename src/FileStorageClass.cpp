@@ -70,7 +70,8 @@ void FileStorageClass::addNewImage(const AcqTypeAndDetName& acqTypeAndDetName, A
         }
     }
     _imageDimensions[acqTypeAndDetName] = newImage.imageSize;
-    
+    _imagePixelFormats.try_emplace(acqTypeAndDetName, newImage.pixelFormat);
+
     _imageIndicesForChannel[acqTypeAndDetName].push_back(_nImagesSeen);
     _imagesTimepoints[acqTypeAndDetName].push_back(newImage.timePoint);
     _imagesStagePositions[acqTypeAndDetName].push_back(newImage.stagePosition);
@@ -185,15 +186,19 @@ AcquiredImage FileStorageClass::_derivedGetImage(const AcqTypeAndDetName& acqTyp
 
     // return blank image if not yet seen
     if ((_imageIndicesForChannel.count(acqTypeAndDetName) == 0) || (imageIndex >= _imageIndicesForChannel.at(acqTypeAndDetName).size())) {
-        std::vector<std::uint8_t> imageData; imageData.resize(4 * 2, 0);
-        AcquiredImage image(std::move(imageData), LNBTIFF::Mono16, {2, 2}, -1.0, StagePosition(), -1, "");
+        LNBTIFF::PixelFormat pixelFormat = LNBTIFF::Mono16;
+        if (_imagePixelFormats.count(acqTypeAndDetName) > 0) {
+            pixelFormat = _imagePixelFormats.at(acqTypeAndDetName);
+        }
+        std::vector<std::uint8_t> imageData(2 * 2 * LNBTIFF::NBytesPerPixelForPixelFormat(pixelFormat), 0);
+        AcquiredImage image(std::move(imageData), pixelFormat, {2, 2}, -1.0, StagePosition(), -1, "");
         return image;
     }
 
     std::pair<int, int> imageSize = _imageDimensions.at(acqTypeAndDetName);
     std::int64_t detectionIndex = _detectionIndicesForChannel.at(acqTypeAndDetName).at(imageIndex);
 
-    AcquiredImage image({}, LNBTIFF::Mono16, imageSize, _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex),
+    AcquiredImage image({}, _imagePixelFormats.at(acqTypeAndDetName), imageSize, _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex),
                         _imagesStagePositions.at(acqTypeAndDetName).at(imageIndex), detectionIndex,
                         _imagesStagePositionNames.at(detectionIndex));
 

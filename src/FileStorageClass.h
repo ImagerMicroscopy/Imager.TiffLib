@@ -76,6 +76,9 @@ private:
 
 	/// @brief Dimensions (width, height) of each channel image
 	std::map<AcqTypeAndDetName, std::pair<int, int>> _imageDimensions;
+
+	/// @brief Pixel format of each channel image (the format of the first image added for the channel)
+	std::map<AcqTypeAndDetName, LNBTIFF::PixelFormat> _imagePixelFormats;
 	
 	/// @brief Global linear indices (IFDs) of images in the TIFF file, sorted per channel
 	std::map<AcqTypeAndDetName, std::vector<int>> _imageIndicesForChannel;

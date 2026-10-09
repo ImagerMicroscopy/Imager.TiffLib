@@ -84,11 +84,6 @@ AcquiredImage FileLoaderClass::_derivedReadImage(const AcqTypeAndDetName& acqTyp
     int64_t detectionIndex = getDetectionIndex(acqTypeAndDetName, imageIndex);
     LNBTIFF::PixelFormat pixelFormat;
     _tiffFile.getImageDimensions(linearIdx, imageLength, imageWidth, pixelFormat, nBytesInImage);
-    if ((pixelFormat != LNBTIFF::Mono16) && (pixelFormat != LNBTIFF::Float64)) {
-        throw std::runtime_error("Not a 16-bit or double image");
-    }
-
-    LNBTIFF::PixelFormat outputPixelFormat = pixelFormat;
 
     double timePoint = _imagesTimepoints.at(acqTypeAndDetName).at(imageIndex);
     StagePosition stagePosition = _imagesStagePositions.at(acqTypeAndDetName).at(imageIndex);
@@ -99,7 +94,7 @@ AcquiredImage FileLoaderClass::_derivedReadImage(const AcqTypeAndDetName& acqTyp
 
     _tiffFile.loadImageData(linearIdx, reinterpret_cast<std::uint8_t*>(imageData.data()), imageData.size());
 
-    AcquiredImage image(std::move(imageData), outputPixelFormat, imageSize, timePoint, stagePosition, detectionIndex, stagePositionName);
+    AcquiredImage image(std::move(imageData), pixelFormat, imageSize, timePoint, stagePosition, detectionIndex, stagePositionName);
     return image;
 }
 

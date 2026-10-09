@@ -138,16 +138,26 @@ waveHndl FreeWaveFromImage(const AcquiredImage& image) {
     waveHndl w;
     CountInt dimSizes[3] = { imageSize.second, imageSize.first, 0 };
     int waveType = 0;
+    size_t nBytesPerPixel = 0;
     switch (image.pixelFormat) {
         case LNBTIFF::Mono8:
             waveType = NT_I8 | NT_UNSIGNED;
+            nBytesPerPixel = sizeof(std::uint8_t);
             break;
         case LNBTIFF::Mono16:
             waveType = NT_I16 | NT_UNSIGNED;
+            nBytesPerPixel = sizeof(std::uint16_t);
             break;
         case LNBTIFF::Float64:
             waveType = NT_FP64;
+            nBytesPerPixel = sizeof(double);
             break;
+        default:
+            throw std::runtime_error("unknown pixel format");
+    }
+    size_t nBytesExpected = (size_t)imageSize.first * (size_t)imageSize.second * nBytesPerPixel;
+    if (image.imageData.size() != nBytesExpected) {
+        throw std::runtime_error("image data size does not match image dimensions and pixel format");
     }
     int err = MDMakeWave(&w, "dummy", (DataFolderHandle)-1, dimSizes, waveType, 1);
     if (err) {

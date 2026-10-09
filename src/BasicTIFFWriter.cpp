@@ -38,6 +38,7 @@ BasicTIFFReader::ReadImage BasicTIFFReader::readImage(size_t imageIdx) {
 
 	ReadImage readImage;
 	readImage.size = {imageLength, imageWidth};
+	readImage.pixelFormat = pixelFormat;
 	readImage.data.resize(nBytesInImage);
 	_tiffFile.loadImageData(imageIdx, readImage.data.data(), readImage.data.size());
 

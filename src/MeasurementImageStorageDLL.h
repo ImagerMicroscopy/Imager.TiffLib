@@ -28,7 +28,7 @@
 extern "C" {
 #endif
 
-#define MIS_API_VERSION 1
+#define MIS_API_VERSION 2
 
 #define MIS_PIXELFORMAT_MONO8 2
 #define MIS_PIXELFORMAT_MONO16 0
@@ -175,9 +175,12 @@ LIBSPEC int MISGetNumberOfImages(
  * @param acqTypeName Acquisition type name.
  * @param detectorName Detector name.
  * @param imageIdx Image index.
- * @param dataLocationPtr Output pointer to image data.
+ * @param dataLocationPtr Output pointer to image data (raw bytes, row-major).
  * @param nRows Output number of rows.
  * @param nCols Output number of columns.
+ * @param pixelFormat Output pixel format of the image data (one of MIS_PIXELFORMAT_MONO8,
+ *        MIS_PIXELFORMAT_MONO16 or MIS_PIXELFORMAT_FLOAT64). The buffer holds
+ *        nRows * nCols * bytesPerPixel bytes, with 1, 2 or 8 bytes per pixel respectively.
  * @return 0 on success, non-zero on error.
  *
  * @note Image data must be released using MISReleaseImageData().
@@ -189,7 +192,8 @@ LIBSPEC int MISGetImage(
     int imageIdx,
     uint8_t** dataLocationPtr,
     int* nRows,
-    int* nCols);
+    int* nCols,
+    int* pixelFormat);
 
 /**
  * @brief Releases image data previously returned by MISGetImage().

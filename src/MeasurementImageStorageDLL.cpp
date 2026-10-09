@@ -64,6 +64,15 @@ LNBTIFF::PixelFormat PixelFormatFromInt(int pixelFormatInt) {
     }
 }
 
+int PixelFormatToInt(LNBTIFF::PixelFormat pixelFormat) {
+    switch (pixelFormat) {
+        case LNBTIFF::Mono8: return MIS_PIXELFORMAT_MONO8;
+        case LNBTIFF::Mono16: return MIS_PIXELFORMAT_MONO16;
+        case LNBTIFF::Float64: return MIS_PIXELFORMAT_FLOAT64;
+        default: throw std::runtime_error("unknown pixel format");
+    }
+}
+
 int32_t MISAPIVersion() {
     return MIS_API_VERSION;
 }
@@ -104,7 +113,8 @@ int MISClose(int64_t storerID) {
  * @param stagePositionName Human-readable name for the stage position (can be empty)
  * @param nRows Number of rows (height) in the image
  * @param nCols Number of columns (width) in the image
- * @param data Pointer to 16-bit unsigned integer image data
+ * @param pixelFormat Pixel format of the image data
+ * @param data Pointer to image pixel data (raw bytes, row-major; nRows * nCols * bytesPerPixel bytes)
  * @return 0 on success, -1 on error
  * 
  * The image data is copied into internal storage, so the caller retains ownership
@@ -173,19 +183,21 @@ std::mutex gImagesInFlightMutex;
  * @param acqTypeName Name of the acquisition type (channel)
  * @param detectorName Name of the detector (camera)
  * @param imageIdx Index of the image (0-based)
- * @param dataLocationPtr (output) Pointer to 16-bit unsigned integer image data
+ * @param dataLocationPtr (output) Pointer to image data (raw bytes, row-major)
  * @param nRows (output) Number of rows (height) in the image
  * @param nCols (output) Number of columns (width) in the image
+ * @param pixelFormat (output) Pixel format of the image data. The buffer holds
+ *        nRows * nCols * bytesPerPixel bytes.
  * @return 0 on success, -1 on error
- * 
+ *
  * The returned image data pointer is valid until MISReleaseImageData() is called
  * with the same pointer. The caller must call MISReleaseImageData() to free
  * the memory when done with the image data.
- * 
+ *
  * Note: Multiple images can be retrieved simultaneously; each must be released
  * individually with its corresponding data pointer.
  */
-int MISGetImage(int64_t storerID, char* acqTypeName, char* detectorName, int imageIdx, uint8_t** dataLocationPtr, int* nRows, int* nCols) {
+int MISGetImage(int64_t storerID, char* acqTypeName, char* detectorName, int imageIdx, uint8_t** dataLocationPtr, int* nRows, int* nCols, int* pixelFormat) {
     return HandleExceptions([&]() {
         AcqTypeAndDetName acqTypeAndDetName(acqTypeName, detectorName);
         std::shared_ptr<StorageWrapperClass> storer = GetStorer(storerID);
@@ -196,8 +208,9 @@ int MISGetImage(int64_t storerID, char* acqTypeName, char* detectorName, int ima
             gImagesInFlight.emplace_back(std::move(image));
             AcquiredImage& newImage = gImagesInFlight.at(gImagesInFlight.size() - 1);
             *dataLocationPtr = newImage.imageData.data();
-            *nRows = image.imageSize.first;
-            *nCols = image.imageSize.second;
+            *nRows = newImage.imageSize.first;
+            *nCols = newImage.imageSize.second;
+            *pixelFormat = PixelFormatToInt(newImage.pixelFormat);
         }
     });
 }
